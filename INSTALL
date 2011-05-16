@@ -1,0 +1,6 @@
+Installation Instructions
+*************************
+
+This config meant to be under 
+~/.emacs.d 
+on posix-like OS.
