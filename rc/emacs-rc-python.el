@@ -1,6 +1,6 @@
 ;;; emacs-rc-python.el ---
 
-;; Author: Egor Baev
+;; Author: Yegor Bayev <kodxxx@gmail.com>
 ;; based on config Alex Ott <alexott@gmail.com>
 
 (defun electric-pair ()
@@ -13,8 +13,8 @@
 ;; load and initialize python-mode
 (add-to-list 'load-path "~/.emacs.d/plugins/python-mode")
 (setq auto-mode-alist (cons '("\\.py$" . python-mode) auto-mode-alist))
-(setq interpreter-mode-alist (cons '("python" . python-mode)
-    interpreter-mode-alist))
+;; (setq interpreter-mode-alist (cons '("python" . python-mode)
+;;     interpreter-mode-alist))
 (autoload 'python-mode "python-mode" "Python editing mode." t)
 
 (defun kodx/python-mode-hook ()

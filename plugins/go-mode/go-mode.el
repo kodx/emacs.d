@@ -155,6 +155,10 @@ point after the insertion of P, reindents the line containing P."
         (indent-according-to-mode))))
   (setq go-mode-delayed-point nil))
 
+;; hook to customize go-mode
+(defvar go-mode-hook nil
+  "*Hook called by `go-mode'.")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parser
 ;;
@@ -484,7 +488,15 @@ functions, and some types.  It also provides indentation that is
   (set (make-local-variable 'comment-end)   "")
 
   ;; Go style
-  (setq indent-tabs-mode t))
+  (setq indent-tabs-mode t)
+
+  ;; kodx
+  ;; (setq indent-tabs-mode nil)
+  ;; (local-set-key [return] 'newline-and-indent)
+
+  (if go-mode-hook
+    (run-hooks 'go-mode-hook))
+  )
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist (cons "\\.go$" #'go-mode))
@@ -513,7 +525,10 @@ Replace the current buffer on success; display errors on failure."
          (save-restriction
            (let (deactivate-mark)
              (widen)
-             (if (= 0 (shell-command-on-region (point-min) (point-max) "gofmt"
+             ;;kodx
+             ;;(if (= 0 (shell-command-on-region (point-min) (point-max) "gofmt"
+             ;;                                  outbuf nil errbuf))
+             (if (= 0 (shell-command-on-region (point-min) (point-max) "gofmt -tabindent=false -spaces=true -tabwidth=4"
                                                outbuf nil errbuf))
                  ;; gofmt succeeded: replace the current buffer with outbuf,
                  ;; restore the mark and point, and discard errbuf.

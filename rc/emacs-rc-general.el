@@ -84,7 +84,7 @@
     fill-column 90
     tab-always-indent t
     indent-tabs-mode nil
-    tab-width 4
+    default-tab-width 4
 )
 (require 'mwheel)
 (mwheel-install)
