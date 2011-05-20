@@ -23,6 +23,14 @@
   ;;(font-lock-add-keywords nil '(("^[^\n]\\{120\\}\\(.*\\)$" 1 font-lock-warning-face t)))
   )
 
+(defun kodx/highlight-numbers ()
+  (add-hook 'after-change-major-mode-hook
+          '(lambda () (font-lock-add-keywords
+                       nil
+                       '(("\\([0-9]+\\)"
+                          1 font-lock-warning-face prepend)))))
+  )
+
 (defun alexott/common-prog-hook ()
   (c-subword-mode 1)
   (alexott/show-prog-keywords)

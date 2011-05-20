@@ -29,6 +29,7 @@
 (load "~/.emacs.d/rc/emacs-rc-ccmode.el")
 (load "~/.emacs.d/rc/emacs-rc-python.el")
 (load "~/.emacs.d/rc/emacs-rc-go-mode.el")
+(load "~/.emacs.d/rc/emacs-rc-html.el")
 
 ;; toggle fullscreen
 (toggle-fullscreen)
