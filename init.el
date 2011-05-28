@@ -24,12 +24,16 @@
 
 ;; automation
 (load "~/.emacs.d/rc/emacs-rc-auto-insert.el")
+(load "~/.emacs.d/rc/emacs-rc-auto-complete.el")
 
 ;; programming tools & languages
 (load "~/.emacs.d/rc/emacs-rc-ccmode.el")
 (load "~/.emacs.d/rc/emacs-rc-python.el")
-(load "~/.emacs.d/rc/emacs-rc-go-mode.el")
 (load "~/.emacs.d/rc/emacs-rc-html.el")
+
+;; Google's Go
+(load "~/.emacs.d/rc/emacs-rc-go-mode.el")
+(load "~/.emacs.d/rc/emacs-rc-go-autocomplete.el")
 
 ;; toggle fullscreen
 (toggle-fullscreen)
