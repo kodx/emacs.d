@@ -2,3 +2,5 @@ private.el
 image-dired/
 auto-save-list/
 ac-comphist.dat
+*.elc
+
