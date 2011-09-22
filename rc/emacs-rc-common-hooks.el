@@ -3,7 +3,6 @@
 ;; Author: Yegor Bayev <kodxxx@gmail.com>
 
 (add-to-list 'load-path "~/.emacs.d/plugins/common")
-(require 'whitespace)
 (require 'smart-operator)
 
 ;; common settings for different text & programming modes
@@ -31,9 +30,20 @@
                           1 font-lock-warning-face prepend)))))
   )
 
+(defun kodx/show-longlines ()
+  (setq whitespace-style '(face indentation trailing empty lines-tail))
+  (setq whitespace-line-column nil)
+  (set-face-attribute 'whitespace-line nil
+                      :background "purple"
+                      :foreground "white"
+                      :weight 'bold)
+)
+
 (defun alexott/common-prog-hook ()
-  (c-subword-mode 1)
+  ;;(c-subword-mode 1)
   (alexott/show-prog-keywords)
+  (kodx/highlight-numbers)
+  (kodx/show-longlines)
   )
 
 ;; clean trailing whitespaces automatically

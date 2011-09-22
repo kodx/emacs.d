@@ -4,6 +4,9 @@
 
 (require 'cc-mode)
 
+(add-to-list 'load-path "~/.emacs.d/plugins/google-c-style")
+(require 'google-c-style)
+
 ;; customisation of cc-mode
 (defun kodx/c-mode-common-hook ()
   ;; style customization
@@ -19,11 +22,15 @@
   (gtags-mode 1)
   (hs-minor-mode 1)
   ;; local keys
-  (local-set-key [return] 'newline-and-indent)
+  ;;(local-set-key [return] 'newline-and-indent)
   )
 (add-hook 'c-mode-common-hook 'kodx/c-mode-common-hook)
 (add-hook 'c-mode-common-hook 'alexott/common-hook)
 (add-hook 'c-mode-common-hook 'alexott/common-prog-hook)
+(add-hook 'c-mode-common-hook 'google-set-c-style)
+(add-hook 'c-mode-common-hook 'google-make-newline-indent)
+
+(add-hook 'c-mode-common-hook (lambda() (local-set-key (kbd "<backtab>") 'ff-find-other-file))) 
 
 (require 'info-look)
 (info-lookup-add-help

@@ -1,15 +1,19 @@
 ;; Emacs 23 config file
-;; author: Baev Egor (kodxxx@gmail.com)
-;; most configs taken from Alex Ott config (http://alexott.net/)
+;; author: Yegor Bayev (kodxxx@gmail.com)
+;; most configs taken from Alex Ott config http://alexott.net/en/emacs/
 
 ;; set init file for custom settings
 (setq custom-file "~/.emacs.d/custom.el")
 
+;; set user name and email, look private.el.example for example
 (when (file-exists-p "~/.emacs.d/private.el")
     (load-file "~/.emacs.d/private.el"))
 
 ;; add commonly used paths
 (push "~/work/dev" load-path)
+
+;; load plugins
+(load "~/.emacs.d/rc/emacs-rc-whitespace.el")
 
 ;; load concrete packages
 (load "~/.emacs.d/rc/emacs-rc-general.el")
@@ -30,6 +34,7 @@
 (load "~/.emacs.d/rc/emacs-rc-ccmode.el")
 (load "~/.emacs.d/rc/emacs-rc-python.el")
 (load "~/.emacs.d/rc/emacs-rc-html.el")
+(load "~/.emacs.d/rc/emacs-rc-lua-mode.el")
 
 ;; Google's Go
 (load "~/.emacs.d/rc/emacs-rc-go-mode.el")
