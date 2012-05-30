@@ -4,3 +4,9 @@ Installation Instructions
 This config meant to be under 
 ~/.emacs.d 
 on posix-like OS.
+
+First make byte-compile
+M-x byte-recompile-directory 
+~/.emacs.d
+
+this is going to speed up emacs startup time
