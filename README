@@ -1,5 +1,5 @@
 Emacs config by
-Yegor Bayev <kodxxx@gmail.com>
+Yegor Bayev <baev.egor@gmail.com>
 
 most of parts derived from Alex Ott config
 http://alexott.net/en/emacs/
@@ -32,3 +32,5 @@ font face can be set in
 rc/emacs-rc-font.el
 
 currently i'm using Meslo-Font from https://github.com/andreberg/Meslo-Font
+
+Please read INSTALL to make installation setup
