@@ -34,6 +34,7 @@
     default-input-method "russian-computer"
     w3m-use-cookies t
     ediff-window-setup-function 'ediff-setup-windows-plain
+    ring-bell-function 'ignore
 )
 
 ;;decor
