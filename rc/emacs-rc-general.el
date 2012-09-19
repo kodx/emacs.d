@@ -85,7 +85,7 @@
     fill-column 90
     tab-always-indent t
     indent-tabs-mode nil
-    default-tab-width 4
+    tab-width 4
 )
 (require 'mwheel)
 (mwheel-install)
@@ -104,6 +104,18 @@
 )
 (display-time)
 
+;; Create Cyrillic-CP1251 Language Environment menu item
+(set-language-info-alist
+ "Cyrillic-CP1251" `((charset cyrillic-iso8859-5)
+           (coding-system cp1251)
+           (coding-priority cp1251)
+           (input-method . "cyrillic-jcuken")
+           (features cyril-util)
+           (unibyte-display . cp1251)
+           (sample-text . "Russian (Русский)    Здравствуйте!")
+           (documentation . "Support for Cyrillic CP1251."))
+ '("Cyrillic"))
+
 ;;(custom-set-variables
 ;; '(safe-local-variable-values (quote (
 ;;    (c-file-offsets (substatement-open . 0))
@@ -114,9 +126,6 @@
 ;;    (TeX-open-quote . "<<")
 ;;    (TeX-close-quote . ">>")
 ;;    ))))
-
-
-
 
 
 ;; htmlize

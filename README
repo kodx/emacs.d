@@ -31,6 +31,8 @@ rc/emacs-rc-kbd.el
 font face can be set in
 rc/emacs-rc-font.el
 
-currently i'm using Meslo-Font from https://github.com/andreberg/Meslo-Font
+i'm using Meslo-Font from https://github.com/andreberg/Meslo-Font
+
+for python-mode install pymacs
 
 Please read INSTALL to make installation setup
