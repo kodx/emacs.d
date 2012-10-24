@@ -10,7 +10,8 @@
 (ac-config-default)
 
 ;; Generic setup.
-(setq ac-auto-start t)                ;automatically start
+(setq ac-auto-start nil)                ;automatically start
+(global-set-key "\M-/" 'ac-start)       ;use M-/ to autocomplete
 (setq ac-dwim t)                        ;Do what i mean
 
 ;;; emacs-rc-autocomplete.el ends here
