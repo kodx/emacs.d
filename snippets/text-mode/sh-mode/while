@@ -1,5 +1,0 @@
-#name : while ... ; do ... ; done
-# --
-while ${1:condition}; do
-$0$>
-done$>
