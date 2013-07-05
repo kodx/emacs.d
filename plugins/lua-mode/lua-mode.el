@@ -1,8 +1,6 @@
 ;;; lua-mode.el --- a major-mode for editing Lua scripts
 
-;; Copyright (C) 1997, 2001, 2004, 2006, 2007, 2010, 2011 Free Software Foundation, Inc.
-
-;; Author: 2011 immerrr <immerrr+lua@gmail.com>
+;; Author: 2011-2013 immerrr <immerrr+lua@gmail.com>
 ;;         2010-2011 Reuben Thomas <rrt@sc3d.org>
 ;;         2006 Juergen Hoetzel <juergen@hoetzel.info>
 ;;         2004 various (support for Lua 5 and byte compilation)
@@ -13,8 +11,9 @@
 ;;              Paul Du Bois <pld-lua@gelatinous.com> and
 ;;              Aaron Smith <aaron-lua@gelatinous.com>.
 ;;
-;; URL:         http://lua-mode.luaforge.net/
-;; Version:     20110428
+;; URL:         http://immerrr.github.com/lua-mode
+;; Version:     20111107
+;;
 ;; This file is NOT part of Emacs.
 ;;
 ;; This program is free software; you can redistribute it and/or
@@ -34,8 +33,24 @@
 
 ;; Keywords: languages, processes, tools
 
+;; This field is expanded to commit SHA, date & associated heads/tags during
+;; archive creation.
+;; Revision: $Format:%h (%cD %d)$
+;;
 
 ;;; Commentary:
+
+;; Thanks to d87 <github.com/d87> for an idea of highlighting lua
+;; builtins/numbers
+
+;; Thanks to Vedat Hallac <github.com/vhallac> for sharing some of
+;; his fixes and updates to core indentation logics
+
+;; Thanks to Rafael Sanchez <rafael@cornerdimension.com> for patch
+;; adding lua-mode to interpreter-mode-alist
+
+;; Thanks to Leonardo Etcheverry <leo@kalio.net> for enabling
+;; narrow-to-defun functionality
 
 ;; Thanks to Tobias Polzin <polzin@gmx.de> for function indenting
 ;; patch: Indent "(" like "{"
@@ -87,7 +102,80 @@
 
 
 ;;; Code:
+(eval-when-compile
+  (require 'cl))
+
 (require 'comint)
+
+(eval-and-compile
+  ;; Backward compatibility for Emacsen < 24.1
+  (defalias 'lua--prog-mode
+    (if (fboundp 'prog-mode) 'prog-mode 'fundamental-mode))
+
+  (defalias 'lua--cl-assert
+    (if (fboundp 'cl-assert) 'cl-assert 'assert))
+
+  (defalias 'lua--cl-labels
+    (if (fboundp 'cl-labels) 'cl-labels 'flet))
+
+  ;; for Emacsen < 22.1
+  (defalias 'lua--with-no-warnings
+    (if (fboundp 'with-no-warnings) 'with-no-warnings 'progn))
+
+  ;; provide backward compatibility for Emacs < 23.2
+  ;; called-interactively-p receives an argument starting from Emacs 23.2
+  ;; In Emacs 22 & Emacs 23.1 it didn't expect an argument
+  ;; In Emacs 21 it was called interactively-p
+  (condition-case nil
+      (progn (called-interactively-p nil)
+             ;; if first call succeeds, make lua-called-interactively-p an alias
+             (defalias 'lua--called-interactively-p 'called-interactively-p))
+
+    (wrong-number-of-arguments
+     ;; wrong number of arguments means it's 22.1 <= Emacs < 23.2
+     ;;
+     ;; Newer and smarter Emacsen will warn about obsolete functions
+     ;; and/or wrong number of arguments. Turning these warnings off,
+     ;; since it's backward-compatibility-oriented code anyway.
+     (lua--with-no-warnings
+       (defun lua--called-interactively-p (kind)
+         "Return t if containing function was called interactively.
+
+This function provides lua-mode backward compatibility for
+pre-23.2 Emacsen."
+         (if (eq kind 'interactive)
+             (interactive-p)
+           (called-interactively-p)))))
+
+    ;; if not, it's probably < 22.1, provide partial compatibility
+    ;;
+    ;; Once again, turning obsolete-function warnings off (see above).
+    (error
+     (lua--with-no-warnings
+       (defun lua--called-interactively-p (&rest opts)
+         "Return t if containing function was called interactively.
+
+This function provides lua-mode backward compatibility for pre-22
+Emacsen."
+         (interactive-p)))))
+
+  ;; backward compatibility for Emacsen < 23.3
+  ;; Emacs 23.3 introduced with-silent-modifications macro
+  (if (fboundp 'with-silent-modifications)
+      (defalias 'lua--with-silent-modifications 'with-silent-modifications)
+
+    (defmacro lua--with-silent-modifications (&rest body)
+      "Execute BODY, pretending it does not modifies the buffer.
+
+This is a reimplementation of macro `with-silent-modifications'
+for Emacsen that doesn't contain one (pre-23.3)."
+      `(let ((old-modified-p (buffer-modified-p))
+            (inhibit-modification-hooks t)
+            (buffer-undo-list t))
+
+        (unwind-protect
+            ,@body
+          (set-buffer-modified-p old-modified-p))))))
 
 ;; Local variables
 (defgroup lua nil
@@ -138,15 +226,13 @@ Should be a list of strings."
   "Buffer used for communication with Lua subprocess")
 
 (defun lua--customize-set-prefix-key (prefix-key-sym prefix-key-val)
-  ;; FIXME: enable assertion, it requires 'cl and I'm not sure of its availability
-  ;; (assert (eq prefix-key-sym 'lua-prefix-key))
+  (lua--cl-assert (eq prefix-key-sym 'lua-prefix-key))
   (set prefix-key-sym (if (and prefix-key-val (> (length prefix-key-val) 0))
                           ;; read-kbd-macro returns a string or a vector
                           ;; in both cases (elt x 0) is ok
                           (elt (read-kbd-macro prefix-key-val) 0)))
   (if (fboundp 'lua-prefix-key-update-bindings)
-      (lua-prefix-key-update-bindings))
-  (message "prefix key set to %S"  (single-key-description (eval prefix-key-sym))))
+      (lua-prefix-key-update-bindings)))
 
 (defcustom lua-prefix-key "\C-c"
   "Prefix for all lua-mode commands."
@@ -165,8 +251,7 @@ Should be a list of strings."
       (mapc (lambda (key_defn)
               (define-key result-map (read-kbd-macro (car key_defn)) (cdr key_defn)))
             '(("C-l" . lua-send-buffer)
-              ("C-f" . lua-search-documentation)
-              ("C-;" . lua-mark-all-multiline-literals)))
+              ("C-f" . lua-search-documentation)))
       result-map))
   "Keymap that is used to define keys accessible by `lua-prefix-key'.
 
@@ -211,6 +296,12 @@ If the latter is nil, the keymap translates into `lua-mode-map' verbatim.")
   :type 'regexp
   :group 'lua)
 
+(defcustom lua-indent-string-contents nil
+  "If non-nil, contents of multiline string will be indented.
+Otherwise leading amount of whitespace on each line is preserved."
+  :group 'lua
+  :type 'boolean)
+
 (defcustom lua-jump-on-traceback t
   "*Jump to innermost traceback location in *lua* buffer.  When this
 variable is non-nil and a traceback occurs when running Lua code in a
@@ -219,8 +310,10 @@ traceback location."
   :type 'boolean
   :group 'lua)
 
-(defvar lua-mode-hook nil
-  "Hooks called when Lua mode fires up.")
+(defcustom lua-mode-hook nil
+  "Hooks called when Lua mode fires up."
+  :type 'hook
+  :group 'lua)
 
 (defvar lua-region-start (make-marker)
   "Start of special region for Lua communication.")
@@ -245,50 +338,276 @@ traceback location."
     ["Search Documentation" lua-search-documentation t])
   "Emacs menu for Lua mode.")
 
+;; the whole defconst is inside eval-when-compile, because it's later referenced
+;; inside another eval-and-compile block
+(eval-and-compile
+  (defconst
+    lua--builtins
+    (let*
+        ((modules
+          '("_G" "_VERSION" "assert" "collectgarbage" "dofile" "error" "getfenv"
+            "getmetatable" "ipairs" "load" "loadfile" "loadstring" "module"
+            "next" "pairs" "pcall" "print" "rawequal" "rawget" "rawlen" "rawset"
+            "require" "select" "setfenv" "setmetatable" "tonumber" "tostring"
+            "type" "unpack" "xpcall" "self"
+            ("bit32" . ("arshift" "band" "bnot" "bor" "btest" "bxor" "extract"
+                        "lrotate" "lshift" "replace" "rrotate" "rshift"))
+            ("coroutine" . ("create" "resume" "running" "status" "wrap" "yield"))
+            ("debug" . ("debug" "getfenv" "gethook" "getinfo" "getlocal"
+                        "getmetatable" "getregistry" "getupvalue" "getuservalue"
+                        "setfenv" "sethook" "setlocal" "setmetatable"
+                        "setupvalue" "setuservalue" "traceback" "upvalueid"
+                        "upvaluejoin"))
+            ("io" . ("close" "flush" "input" "lines" "open" "output" "popen"
+                     "read" "stderr" "stdin" "stdout" "tmpfile" "type" "write"))
+            ("math" . ("abs" "acos" "asin" "atan" "atan2" "ceil" "cos" "cosh"
+                       "deg" "exp" "floor" "fmod" "frexp" "huge" "ldexp" "log"
+                       "log10" "max" "min" "modf" "pi" "pow" "rad" "random"
+                       "randomseed" "sin" "sinh" "sqrt" "tan" "tanh"))
+            ("os" . ("clock" "date" "difftime" "execute" "exit" "getenv"
+                     "remove"  "rename" "setlocale" "time" "tmpname"))
+            ("package" . ("config" "cpath" "loaded" "loaders" "loadlib" "path"
+                          "preload" "searchers" "searchpath" "seeall"))
+            ("string" . ("byte" "char" "dump" "find" "format" "gmatch" "gsub"
+                         "len" "lower" "match" "rep" "reverse" "sub" "upper"))
+            ("table" . ("concat" "insert" "maxn" "pack" "remove" "sort" "unpack"
+                        )))))
+
+      ;; This code uses \\< and \\> to delimit builtin symbols instead of
+      ;; \\_< and \\_>, because -- a necessity -- '.' syntax class is hacked
+      ;; to 'symbol' and \\_> won't detect a symbol boundary in 'foo.bar' and
+      ;; -- sufficiency -- conveniently, underscore '_' is hacked to count as
+      ;; word constituent, but only for font-locking. Neither of these hacks
+      ;; makes sense to me, I'm going to wipe them out as soon as I'm sure
+      ;; that indentation won't get hurt. --immerrr
+      ;;
+      (lua--cl-labels
+       ((module-name-re (x)
+                        (concat "\\(?1:\\<"
+                                (if (listp x) (car x) x)
+                                "\\>\\)"))
+        (module-members-re (x) (if (listp x)
+                                   (concat "\\(?:[ \t]*\\.[ \t]*"
+                                           "\\<\\(?2:"
+                                           (regexp-opt (cdr x))
+                                           "\\)\\>\\)?")
+                                 "")))
+
+       (concat
+        ;; common prefix - beginning-of-line or neither of [ '.', ':' ] to
+        ;; exclude "foo.string.rep"
+        "\\(?:\\`\\|[^:. \n\t]\\)"
+        ;; optional whitespace
+        "[ \n\t]*"
+        "\\(?:"
+        ;; any of modules/functions
+        (mapconcat (lambda (x) (concat (module-name-re x)
+                                       (module-members-re x)))
+                   modules
+                   "\\|")
+        "\\)"))))
+
+  "A regexp that matches lua builtin functions & variables.
+
+This is a compilation of 5.1 and 5.2 builtins taken from the
+index of respective Lua reference manuals.")
+
+(defun lua-make-delimited-matcher (elt-regexp sep-regexp end-regexp)
+  "Construct matcher function for `font-lock-keywords' to match a sequence.
+
+It's supposed to match sequences with following EBNF:
+
+ELT-REGEXP { SEP-REGEXP ELT-REGEXP } END-REGEXP
+
+The sequence is parsed one token at a time.  If non-nil is
+returned, `match-data' will have one or more of the following
+groups set according to next matched token:
+
+1. matched element token
+2. unmatched garbage characters
+3. misplaced token (i.e. SEP-REGEXP when ELT-REGEXP is expected)
+4. matched separator token
+5. matched end token
+
+Blanks & comments between tokens are silently skipped.
+Groups 6-9 can be used in any of argument regexps."
+  (lexical-let*
+      ((delimited-matcher-re-template
+        "\\=\\(?2:.*?\\)\\(?:\\(?%s:\\(?4:%s\\)\\|\\(?5:%s\\)\\)\\|\\(?%s:\\(?1:%s\\)\\)\\)")
+       ;; There's some magic to this regexp. It works as follows:
+       ;;
+       ;; A. start at (point)
+       ;; B. non-greedy match of garbage-characters (?2:)
+       ;; C. try matching separator (?4:) or end-token (?5:)
+       ;; D. try matching element (?1:)
+       ;;
+       ;; Simple, but there's a trick: pt.C and pt.D are embraced by one more
+       ;; group whose purpose is determined only after the template is
+       ;; formatted (?%s:):
+       ;;
+       ;; - if element is expected, then D's parent group becomes "shy" and C's
+       ;;   parent becomes group 3 (aka misplaced token), so if D matches when
+       ;;   an element is expected, it'll be marked with warning face.
+       ;;
+       ;; - if separator-or-end-token is expected, then it's the opposite:
+       ;;   C's parent becomes shy and D's will be matched as misplaced token.
+       (elt-expected-re (format delimited-matcher-re-template
+                                3 sep-regexp end-regexp "" elt-regexp))
+       (sep-or-end-expected-re (format delimited-matcher-re-template
+                                       "" sep-regexp end-regexp 3 elt-regexp)))
+
+    (lambda (end)
+      (let* ((prev-elt-p (match-beginning 1))
+             (prev-sep-p (match-beginning 4))
+             (prev-end-p (match-beginning 5))
+
+             (regexp (if prev-elt-p sep-or-end-expected-re elt-expected-re))
+             (comment-start (lua-comment-start-pos (syntax-ppss)))
+             (parse-stop end))
+
+        ;; If token starts inside comment, or end-token was encountered, stop.
+        (when (and (not comment-start)
+                   (not prev-end-p))
+          ;; Skip all comments & whitespace. forward-comment doesn't have boundary
+          ;; argument, so make sure point isn't beyond parse-stop afterwards.
+          (while (and (< (point) end)
+                      (forward-comment 1)))
+          (goto-char (min (point) parse-stop))
+
+          ;; Reuse comment-start variable to store beginning of comment that is
+          ;; placed before line-end-position so as to make sure token search doesn't
+          ;; enter that comment.
+          (setq comment-start
+                (lua-comment-start-pos
+                 (save-excursion
+                   (parse-partial-sexp (point) parse-stop
+                                       nil nil nil 'stop-inside-comment)))
+                parse-stop (or comment-start parse-stop))
+
+          ;; Now, let's match stuff.  If regular matcher fails, declare a span of
+          ;; non-blanks 'garbage', and the next iteration will start from where the
+          ;; garbage ends.  If couldn't match any garbage, move point to the end
+          ;; and return nil.
+          (or (re-search-forward regexp parse-stop t)
+              (re-search-forward "\\(?1:\\(?2:[^ \t]+\\)\\)" parse-stop 'skip)
+              (prog1 nil (goto-char end))))))))
+
+(defconst lua-local-defun-regexp
+  ;; Function matchers are very crude, need rewrite at some point.
+  (rx (or (seq (regexp "\\(?:\\_<function\\_>\\)")
+               (* blank)
+               (? (regexp "\\(?1:\\_<[[:alpha:]][[:alnum:]]*\\_>\\)"))
+               (regexp "\\(?2:.*\\)"))
+          (seq (? (regexp "\\(?1:\\_<[[:alpha:]][[:alnum:]]*\\_>\\)"))
+               (* blank) "=" (* blank)
+               (regexp "\\(?:\\_<function\\_>\\)")
+               (regexp "\\(?2:.*\\)")))))
+
 (defvar lua-font-lock-keywords
-  (eval-when-compile
-    (list
-     ;; Handle variable names
-     ;;  local blalba =
-     ;;        ^^^^^^
-     '("\\(local[ \t]+\\(\\sw+\\)[ \t]*=\\)"
-       (2 font-lock-variable-name-face))
+  `(;; highlight the hash-bang line "#!/foo/bar/lua" as comment
+    ("^#!.*$" . font-lock-comment-face)
 
-     ;; Function name declarations.
-     '("^[ \t]*\\_<\\(\\(local[ \t]+\\)?function\\)\\_>[ \t]+\\(\\(\\sw:\\|\\sw\\.\\|\\sw_\\|\\sw\\)+\\)"
-       (1 font-lock-keyword-face) (3 font-lock-function-name-face nil t))
+    ;; Keywords.
+    (,(rx symbol-start
+          (or "and" "break" "do" "else" "elseif" "end" "false"
+              "for" "function" "if" "in" "local" "nil" "not"
+              "or" "repeat" "return" "then" "true" "until"
+              "while")
+          symbol-end)
+     . font-lock-keyword-face)
 
-     ;; Handle function names in assignments
-     '("\\(\\(\\sw:\\|\\sw\\.\\|\\sw_\\|\\sw\\)+\\)[ \t]*=[ \t]*\\(function\\)\\_>"
-       (1 font-lock-function-name-face nil t) (3 font-lock-keyword-face))
+    ;; Highlight lua builtin functions and variables
+    (,lua--builtins
+     (1 font-lock-builtin-face) (2 font-lock-builtin-face nil noerror))
 
-     ;; Keywords.
-     (concat "\\_<"
-             (regexp-opt '("and" "break" "do" "else" "elseif" "end" "false"
-                           "for" "function" "if" "in" "local" "nil" "not"
-                           "or" "repeat" "return" "then" "true" "until"
-                           "while") t)
-             "\\_>")
+    ;; hexadecimal numbers
+    ("\\_<0x[[:xdigit:]]+\\_>" . font-lock-constant-face)
 
-     "Default expressions to highlight in Lua mode.")))
+    ;; regular numbers
+    ;;
+    ;; This regexp relies on '.' being symbol constituent. Whenever this
+    ;; changes, the regexp needs revisiting --immerrr
+    (, (rx symbol-start
+           ;; make a digit on either side of dot mandatory
+           (or (seq (+ num) (? ".") (* num))
+               (seq (* num) (? ".") (+ num)))
+           (? (regexp "[eE][+-]?") (+ num))
+           symbol-end)
+       . font-lock-constant-face)
+
+    ("^[ \t]*\\_<for\\_>"
+     (,(lua-make-delimited-matcher "\\_<[[:alpha:]_][[:alnum:]_]*\\_>" ","
+                                   "\\(?:\\_<in\\_>\\|=\\(?:[^=]\\|$\\)\\)")
+      nil nil
+      (1 font-lock-variable-name-face nil noerror)
+      (2 font-lock-warning-face t noerror)
+      (3 font-lock-warning-face t noerror)))
+
+    ;; Handle local variable/function names
+    ;;  local blalba, xyzzy =
+    ;;        ^^^^^^  ^^^^^
+    ;;
+    ;;  local function foobar(x,y,z)
+    ;;                 ^^^^^^
+    ;;  local foobar = function(x,y,z)
+    ;;        ^^^^^^
+    ("^[ \t]*\\_<local\\_>"
+     (0 font-lock-keyword-face)
+
+     ((lambda (end)
+        (re-search-forward
+         (rx point (* blank) (regexp ,lua-local-defun-regexp)) end t))
+      nil nil
+      (1 font-lock-function-name-face nil noerror))
+
+     (,(lua-make-delimited-matcher "\\_<[[:alpha:]_][[:alnum:]_]*\\_>" "," 
+                                   "=\\(?:[^=]\\|$\\)")
+      nil nil
+      (1 font-lock-variable-name-face nil noerror)
+      (2 font-lock-warning-face t noerror)
+      (3 font-lock-warning-face t noerror)))
+
+    ;; Function matchers are very crude, need rewrite at some point.
+    ;; Function name declarations.
+    ("^[ \t]*\\_<function\\_>[ \t]+\\([[:alnum:]_]+\\(?:\\.[[:alnum:]_]+\\)*\\(?::[[:alnum:]_]+\\)?\\)"
+     (1 font-lock-function-name-face))
+
+    ;; Function matchers are very crude, need rewrite at some point.
+    ;; Handle function names in assignments
+    ("^[ \t]*\\([[:alnum:]_]+\\(?:\\.[[:alnum:]_]+\\)*\\(?::[[:alnum:]_]+\\)?\\)[ \t]*=[ \t]*\\_<function\\_>"
+     (1 font-lock-function-name-face)))
+
+  "Default expressions to highlight in Lua mode.")
 
 (defvar lua-imenu-generic-expression
-  '((nil "^[ \t]*\\(?:local[ \t]+\\)?function[ \t]+\\(\\(\\sw:\\|\\sw_\\|\\sw\\.\\|\\sw\\)+\\)" 1))
+  ;; This regexp matches expressions which look like function
+  ;; definitions, but are not necessarily allowed by Lua syntax.  This
+  ;; is done on purpose to avoid frustration when making a small error
+  ;; might cause a function get hidden from imenu index. --immerrr
+  '((nil "^[ \t]*\\(?:local[ \t]+\\)?function[ \t]+\\([[:alnum:]_:.]+\\)" 1)
+    (nil "^[ \t]*\\(?:local[ \t]+\\)?\\(\\_<[[:alnum:]_:.]+\\_>\\)[ \t]*=\[ \t]*\\_<function\\_>" 1))
   "Imenu generic expression for lua-mode.  See `imenu-generic-expression'.")
-
-(defvar lua-mode-abbrev-table nil
-  "Abbreviation table used in lua-mode buffers.")
 
 (defvar lua-sexp-alist '(("then" . "end")
                          ("function" . "end")
                          ("do" . "end")))
 
+(defvar lua-mode-abbrev-table nil
+  "Abbreviation table used in lua-mode buffers.")
+
 (define-abbrev-table 'lua-mode-abbrev-table
-  '(
-    ("end" "end" lua-indent-line 0)
-    ("else" "else" lua-indent-line 0)
-    ("elseif" "elseif" lua-indent-line 0)
-    ))
+  ;; Emacs 23 introduced :system property that prevents abbrev
+  ;; entries from being written to file specified by abbrev-file-name
+  ;;
+  ;; Emacs 22 and earlier had this functionality implemented
+  ;; by simple nil/non-nil flag as positional parameter
+  (if (>= emacs-major-version 23)
+      '(("end"    "end"    lua-indent-line :system t)
+        ("else"   "else"   lua-indent-line :system t)
+        ("elseif" "elseif" lua-indent-line :system t))
+    '(("end"    "end"      lua-indent-line nil 'system)
+      ("else"   "else"     lua-indent-line nil 'system)
+      ("elseif" "elseif"   lua-indent-line nil 'system))))
 
 (eval-and-compile
   (defalias 'lua-make-temp-file
@@ -301,76 +620,83 @@ traceback location."
              (temp-directory)
            temporary-file-directory))))))
 
-;;;###autoload
-(defun lua-mode ()
-  "Major mode for editing Lua code.
-The following keys are bound:
-\\{lua-mode-map}
-"
-  (interactive)
-  (let ((switches nil)
-        s)
-    (kill-all-local-variables)
-    (setq major-mode 'lua-mode)
-    (setq mode-name "Lua")
-    (setq comint-prompt-regexp lua-prompt-regexp)
-    (make-local-variable 'lua-default-command-switches)
-    (set (make-local-variable 'beginning-of-defun-function)
-         'lua-beginning-of-proc)
-    (set (make-local-variable 'end-of-defun-function) 'lua-end-of-proc)
-    (set (make-local-variable 'indent-line-function) 'lua-indent-line)
-    (set (make-local-variable 'comment-start) lua-comment-start)
-    (set (make-local-variable 'comment-start-skip) lua-comment-start-skip)
-    (set (make-local-variable 'font-lock-defaults)
-         '(lua-font-lock-keywords
-           nil nil ((?_ . "w"))))
-    (set (make-local-variable 'imenu-generic-expression)
-         lua-imenu-generic-expression)
-    (setq local-abbrev-table lua-mode-abbrev-table)
-    (abbrev-mode 1)
-    (make-local-variable 'lua-default-eval)
-    (use-local-map lua-mode-map)
-    (set-syntax-table (copy-syntax-table))
-    (modify-syntax-entry ?+ ".")
+(defvar lua-mode-syntax-table
+  (with-syntax-table (copy-syntax-table)
+    ;; main comment syntax: begins with "--", ends with "\n"
     (modify-syntax-entry ?- ". 12")
+    (modify-syntax-entry ?\n ">")
+
+    ;; main string syntax: bounded by ' or "
+    (modify-syntax-entry ?\' "\"")
+    (modify-syntax-entry ?\" "\"")
+
+    ;; single-character binary operators: punctuation
+    (modify-syntax-entry ?+ ".")
     (modify-syntax-entry ?* ".")
     (modify-syntax-entry ?/ ".")
     (modify-syntax-entry ?^ ".")
-    ;; This might be better as punctuation, as for C, but this way you
-    ;; can treat table index as symbol.
-    (modify-syntax-entry ?. "_")        ; e.g. `io.string'
     (modify-syntax-entry ?> ".")
     (modify-syntax-entry ?< ".")
     (modify-syntax-entry ?= ".")
     (modify-syntax-entry ?~ ".")
-    (modify-syntax-entry ?\n ">")
-    (modify-syntax-entry ?\' "\"")
-    (modify-syntax-entry ?\" "\"")
-    ;; setup menu bar entry (XEmacs style)
-    (if (and (featurep 'menubar)
-             (boundp 'current-menubar)
-             (fboundp 'set-buffer-menubar)
-             (fboundp 'add-menu)
-             (not (assoc "Lua" current-menubar)))
-        (progn
-          (set-buffer-menubar (copy-sequence current-menubar))
-          (add-menu nil "Lua" lua-emacs-menu)))
-    ;; Append Lua menu to popup menu for Emacs.
-    (if (boundp 'mode-popup-menu)
-        (setq mode-popup-menu
-              (cons (concat mode-name " Mode Commands") lua-emacs-menu)))
 
-    ;; hideshow setup
-    (unless (assq 'lua-mode hs-special-modes-alist)
-      (add-to-list 'hs-special-modes-alist
-                   `(lua-mode
-                     ,(regexp-opt (mapcar 'car lua-sexp-alist) 'words) ;start
-                     ,(regexp-opt (mapcar 'cdr lua-sexp-alist) 'words) ;end
-                     nil lua-forward-sexp)))
+    ;; '.' character might be better as punctuation, as in C, but this way you
+    ;; can treat table index as symbol, e.g. `io.string'
+    (modify-syntax-entry ?. "_")
+    (syntax-table))
+  "`lua-mode' syntax table.")
 
-    (set (make-local-variable 'parse-sexp-lookup-properties) t)
-    (lua-mark-all-multiline-literals)
-    (run-hooks 'lua-mode-hook)))
+;;;###autoload
+(define-derived-mode lua-mode lua--prog-mode "Lua"
+  "Major mode for editing Lua code."
+  :abbrev-table lua-mode-abbrev-table
+  :syntax-table lua-mode-syntax-table
+  :group 'lua
+
+  (setq comint-prompt-regexp lua-prompt-regexp)
+  (make-local-variable 'lua-default-command-switches)
+  (set (make-local-variable 'font-lock-defaults)
+       `(lua-font-lock-keywords ;; keywords
+         nil                    ;; keywords-only
+         nil                    ;; case-fold
+         ;; Not sure, why '_' is a word constituent only when font-locking.
+         ;; --immerrr
+         ((?_ . "w")) ;; syntax-alist
+         nil          ;; syntax-begin
+         ;; initialize font-lock buffer-local variables
+         (font-lock-syntactic-keywords  . lua-font-lock-syntactic-keywords)
+         (font-lock-extra-managed-props . (syntax-table))
+         (parse-sexp-lookup-properties  . t)
+         ;; initialize the rest of buffer-local variables
+         (beginning-of-defun-function   . lua-beginning-of-proc)
+         (end-of-defun-function         . lua-end-of-proc)
+         (indent-line-function          . lua-indent-line)
+         (comment-start                 . ,lua-comment-start)
+         (comment-start-skip            . ,lua-comment-start-skip)
+         (imenu-generic-expression      . ,lua-imenu-generic-expression)))
+
+  ;; setup menu bar entry (XEmacs style)
+  (if (and (featurep 'menubar)
+           (boundp 'current-menubar)
+           (fboundp 'set-buffer-menubar)
+           (fboundp 'add-menu)
+           (not (assoc "Lua" current-menubar)))
+      (progn
+        (set-buffer-menubar (copy-sequence current-menubar))
+        (add-menu nil "Lua" lua-emacs-menu)))
+  ;; Append Lua menu to popup menu for Emacs.
+  (if (boundp 'mode-popup-menu)
+      (setq mode-popup-menu
+            (cons (concat mode-name " Mode Commands") lua-emacs-menu)))
+
+  ;; hideshow setup
+  (unless (assq 'lua-mode hs-special-modes-alist)
+    (add-to-list 'hs-special-modes-alist
+                 `(lua-mode
+                   ,(regexp-opt (mapcar 'car lua-sexp-alist) 'words) ;start
+                   ,(regexp-opt (mapcar 'cdr lua-sexp-alist) 'words) ;end
+                   nil lua-forward-sexp))))
+
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.lua$" . lua-mode))
@@ -407,11 +733,18 @@ The following keys are bound:
 This function replaces previous prefix-key binding with a new one."
   (interactive "sNew prefix key (empty string means no key): ")
   (lua--customize-set-prefix-key 'lua-prefix-key new-key-str)
+  (message "Prefix key set to %S"  (single-key-description lua-prefix-key))
   (lua-prefix-key-update-bindings))
 
 (defun lua-string-p (&optional pos)
   "Returns true if the point is in a string."
   (save-excursion (elt (syntax-ppss pos) 3)))
+
+(defun lua-comment-start-pos (parsing-state)
+  "Return position of comment containing current point.
+
+If point is not inside a comment, return nil."
+  (and parsing-state (nth 4 parsing-state) (nth 8 parsing-state)))
 
 (defun lua-comment-p (&optional pos)
   "Returns true if the point is in a comment."
@@ -422,6 +755,77 @@ This function replaces previous prefix-key binding with a new one."
   (save-excursion (let ((parse-result (syntax-ppss pos)))
                     (or (elt parse-result 3) (elt parse-result 4)))))
 
+(defun lua-comment-or-string-start-pos (&optional pos)
+  "Returns start position of string or comment which contains point.
+
+If point is not inside string or comment, return nil."
+  (save-excursion (elt (syntax-ppss pos) 8)))
+
+;; They're propertized as follows:
+;; 1. generic-comment
+;; 2. generic-string
+;; 3. equals signs
+(defconst lua-ml-begin-regexp
+  "\\(?:\\(?1:-\\)-\\[\\|\\(?2:\\[\\)\\)\\(?3:=*\\)\\[")
+
+
+(defun lua-try-match-multiline-end (end)
+  "Try to match close-bracket for multiline literal around point.
+
+Basically, detect form of close bracket from syntactic
+information provided at point and re-search-forward to it."
+  (let ((comment-or-string-start-pos (lua-comment-or-string-start-pos)))
+    ;; Is there a literal around point?
+    (and comment-or-string-start-pos
+         ;; It is, check if the literal is a multiline open-bracket
+         (save-excursion
+           (goto-char comment-or-string-start-pos)
+           (looking-at lua-ml-begin-regexp))
+
+         ;; Yes it is, look for it matching close-bracket.  Close-bracket's
+         ;; match group is determined by match-group of open-bracket.
+         (re-search-forward
+          (format "]%s\\(?%s:]\\)"
+                  (match-string-no-properties 3)
+                  (if (match-beginning 1) 1 2))
+          end 'noerror))))
+
+
+(defun lua-try-match-multiline-begin (limit)
+  "Try to match multiline open-brackets.
+
+Find next opening long bracket outside of any string/comment.
+If none can be found before reaching LIMIT, return nil."
+
+  (let (last-search-matched)
+    (while
+        ;; This loop will iterate skipping all multiline-begin tokens that are
+        ;; inside strings or comments ending either at EOL or at valid token.
+        (and (setq last-search-matched
+                   (re-search-forward lua-ml-begin-regexp limit 'noerror))
+
+             ;; (1+ (match-beginning 0)) is required to handle triple-hyphen
+             ;; '---[[' situation: regexp matches starting from the second one,
+             ;; but it's not yet a comment, because it's a part of 2-character
+             ;; comment-start sequence, so if we try to detect if the opener is
+             ;; inside a comment from the second hyphen, it'll fail.  But the
+             ;; third one _is_ inside a comment and considering it instead will
+             ;; fix the issue. --immerrr
+             (lua-comment-or-string-start-pos (1+ (match-beginning 0)))))
+
+    last-search-matched))
+
+(defun lua-match-multiline-literal-bounds (limit)
+  ;; First, close any multiline literal spanning from previous block. This will
+  ;; move the point accordingly so as to avoid double traversal.
+  (or (lua-try-match-multiline-end limit)
+      (lua-try-match-multiline-begin limit)))
+
+(defvar lua-font-lock-syntactic-keywords
+  '((lua-match-multiline-literal-bounds
+     (1 "!" nil noerror)
+     (2 "|" nil noerror))))
+
 (defun lua-indent-line ()
   "Indent current line for Lua mode.
 Return the amount the indentation changed by."
@@ -430,19 +834,39 @@ Return the amount the indentation changed by."
         ;; save point as a distance to eob - it's invariant w.r.t indentation
         (pos (- (point-max) (point))))
     (back-to-indentation)
-    (if (lua-string-p)  ;; don't indent if inside multiline string literal
-        (goto-char (- (point-max) pos)) ;; just restore point position
+    (if (lua-comment-or-string-p)
+        (setq indent (lua-calculate-string-or-comment-indentation)) ;; just restore point position
+      (setq indent (max 0 (lua-calculate-indentation nil))))
 
-      (setq indent (max 0 (- (lua-calculate-indentation nil)
-                             (lua-calculate-unindentation))))
-      (when (not (equal indent (current-column)))
-        (delete-region (line-beginning-position) (point))
-        (indent-to indent))
-      ;; If initial point was within line's indentation,
-      ;; position after the indentation.  Else stay at same point in text.
-      (if (> (- (point-max) pos) (point))
-          (goto-char (- (point-max) pos)))
-      indent)))
+    (when (not (equal indent (current-column)))
+      (delete-region (line-beginning-position) (point))
+      (indent-to indent))
+
+    ;; If initial point was within line's indentation,
+    ;; position after the indentation.  Else stay at same point in text.
+    (if (> (- (point-max) pos) (point))
+        (goto-char (- (point-max) pos)))
+
+    indent))
+
+(defun lua-calculate-string-or-comment-indentation ()
+  "This function should be run when point at (current-indentation) is inside string"
+  (if (and (lua-string-p) (not lua-indent-string-contents))
+      ;; if inside string and strings aren't to be indented, return current indentation
+      (current-indentation)
+
+    ;; At this point, we know that we're inside comment, so make sure
+    ;; close-bracket is unindented like a block that starts after
+    ;; left-shifter.
+    (let ((left-shifter-p (looking-at "\\s *\\(?:--\\)?\\]\\(?1:=*\\)\\]")))
+      (save-excursion
+        (goto-char (lua-comment-or-string-start-pos))
+        (+ (current-indentation)
+           (if (and left-shifter-p
+                    (looking-at (format "--\\[%s\\["
+                                        (match-string-no-properties 1))))
+               0
+             lua-indent-level))))))
 
 (defun lua-find-regexp (direction regexp &optional limit ignore-p)
   "Searches for a regular expression in the direction specified.
@@ -472,26 +896,30 @@ ignored, nil otherwise."
      (regexp-opt '("{" "(" "[" "]" ")" "}") t))))
 
 (defconst lua-block-token-alist
-  ;; The absence of "else" is deliberate. This construct in a way both
-  ;; opens and closes a block. As a result, it is difficult to handle
-  ;; cleanly. It is also ambiguous - if we are looking for the match
-  ;; of "else", should we look backward for "then/elseif" or forward
-  ;; for "end"?
-  ;; Maybe later we will find a way to handle it.
-  '(("do"       "\\_<end\\_>"                                 open)
-    ("function" "\\_<end\\_>"                                 open)
-    ("repeat"   "\\_<until\\_>"                               open)
-    ("then"     "\\_<\\(e\\(lseif\\|nd\\)\\)\\_>"             open)
-    ("{"        "}"                                           open)
-    ("["        "]"                                           open)
-    ("("        ")"                                           open)
-    ("elseif"   "\\_<then\\_>"                                close)
-    ("end"      "\\_<\\(do\\|function\\|then\\)\\_>"          close)
-    ("until"    "\\_<repeat\\_>"                              close)
-    ("}"        "{"                                           close)
-    ("]"        "\\["                                         close)
-    (")"        "("                                           close)))
-
+  '(("do"       "\\<end\\>"   "\\<for\\|while\\>"                       middle-or-open)
+    ("function" "\\<end\\>"   nil                                       open)
+    ("repeat"   "\\<until\\>" nil                                       open)
+    ("then"     "\\<\\(e\\(lse\\(if\\)?\\|nd\\)\\)\\>" "\\<\\(else\\)?if\\>" middle)
+    ("{"        "}"           nil                                       open)
+    ("["        "]"           nil                                       open)
+    ("("        ")"           nil                                       open)
+    ("if"       "\\<then\\>"  nil                                       open)
+    ("for"      "\\<do\\>"    nil                                       open)
+    ("while"    "\\<do\\>"    nil                                       open)
+    ("else"     "\\<end\\>"   "\\<then\\>"                              middle)
+    ("elseif"   "\\<then\\>"  "\\<then\\>"                              middle)
+    ("end"      nil           "\\<\\(do\\|function\\|then\\|else\\)\\>" close)
+    ("until"    nil           "\\<repeat\\>"                            close)
+    ("}"        nil           "{"                                       close)
+    ("]"        nil           "\\["                                     close)
+    (")"        nil           "("                                       close))
+  "This is a list of block token information blocks.
+Each token information entry is of the form:
+  KEYWORD FORWARD-MATCH-REGEXP BACKWARDS-MATCH-REGEXP TOKEN-TYPE
+KEYWORD is the token.
+FORWARD-MATCH-REGEXP is a regexp that matches all possble tokens when going forward.
+BACKWARDS-MATCH-REGEXP is a regexp that matches all possble tokens when going backwards.
+TOKEN-TYPE determines where the token occurs on a statement. open indicates that the token appears at start, close indicates that it appears at end, middle indicates that it is a middle type token, and middle-or-open indicates that it can appear both as a middle or an open type.")
 
 (defconst lua-indentation-modifier-regexp
   ;; The absence of else is deliberate, since it does not modify the
@@ -499,51 +927,105 @@ ignored, nil otherwise."
   ;; else is, to be shifted to the left.
   (concat
    "\\(\\_<"
-   ;; n.b. "local function" is a bit of a hack, allowing only a single space
-   (regexp-opt '("do" "local function" "function" "repeat" "then") t)
+   (regexp-opt '("do" "function" "repeat" "then" "if" "else" "elseif" "for" "while") t)
    "\\_>\\|"
    (regexp-opt '("{" "(" "["))
    "\\)\\|\\(\\_<"
-   (regexp-opt '("elseif" "end" "until") t)
+   (regexp-opt '("end" "until") t)
    "\\_>\\|"
    (regexp-opt '("]" ")" "}"))
    "\\)")
   )
+
+(defun lua-get-block-token-info (token)
+  "Returns the block token info entry for TOKEN from lua-block-token-alist"
+  (assoc token lua-block-token-alist))
+
+(defun lua-get-token-match-re (token-info direction)
+  "Returns the relevant match regexp from token info"
+  (cond
+   ((eq direction 'forward) (cadr token-info))
+   ((eq direction 'backward) (caddr token-info))
+   (t nil)))
+
+(defun lua-get-token-type (token-info)
+  "Returns the relevant match regexp from token info"
+   (cadddr token-info))
 
 (defun lua-backwards-to-block-begin-or-end ()
   "Move backwards to nearest block begin or end.  Returns nil if not successful."
   (interactive)
   (lua-find-regexp 'backward lua-block-regexp))
 
-(defun lua-find-matching-token-word (token search-start)
-  (let* ((token-info (assoc token lua-block-token-alist))
-         (match (car (cdr token-info)))
-         (match-type (car (cdr (cdr token-info))))
-         (search-direction (if (eq match-type 'open) 'forward 'backward)))
+(defun lua-find-matching-token-word (token search-start &optional direction)
+  (let* ((token-info (lua-get-block-token-info token))
+         (match-type (lua-get-token-type token-info))
+         ;; If we are on a middle token, go backwards. If it is a middle or open,
+         ;; go forwards
+         (search-direction (or direction
+                               (if (or (eq match-type 'open)
+                                       (eq match-type 'middle-or-open))
+                                   'forward
+                                 'backward)
+                               'backward))
+         (match (lua-get-token-match-re token-info search-direction))
+         maybe-found-pos)
     ;; if we are searching forward from the token at the current point
     ;; (i.e. for a closing token), need to step one character forward
     ;; first, or the regexp will match the opening token.
-    (if (eq match-type 'open) (forward-char 1))
+    (if (eq search-direction 'forward) (forward-char 1))
     (if search-start (goto-char search-start))
     (catch 'found
+      ;; If we are attempting to find a matching token for a terminating token
+      ;; (i.e. a token that starts a statement when searching back, or a token
+      ;; that ends a statement when searching forward), then we don't need to look
+      ;; any further.
+      (if (or (and (eq search-direction 'forward)
+                   (eq match-type 'close))
+              (and (eq search-direction 'backward)
+                   (eq match-type 'open)))
+          (throw 'found nil))
       (while (lua-find-regexp search-direction lua-indentation-modifier-regexp)
         ;; have we found a valid matching token?
         (let ((found-token (match-string 0))
               (found-pos (match-beginning 0)))
-          (if (string-match match found-token)
-              (throw 'found found-pos))
-          ;; no - then there is a nested block. If we were looking for
-          ;; a block begin token, found-token must be a block end
-          ;; token; likewise, if we were looking for a block end token,
-          ;; found-token must be a block begin token, otherwise there
-          ;; is a grammatical error in the code.
-          (if (not (and
-                    (eq (car (cdr (cdr (assoc found-token lua-block-token-alist))))
-                        match-type)
-                    (lua-find-matching-token-word found-token nil)))
-              (throw 'found nil)))))))
+          (let ((found-type (lua-get-token-type
+                             (lua-get-block-token-info found-token))))
+            (if (not (and match (string-match match found-token)))
+                ;; no - then there is a nested block. If we were looking for
+                ;; a block begin token, found-token must be a block end
+                ;; token; likewise, if we were looking for a block end token,
+                ;; found-token must be a block begin token, otherwise there
+                ;; is a grammatical error in the code.
+                (if (not (and
+                          (or (eq match-type 'middle)
+                              (eq found-type 'middle)
+                              (eq match-type 'middle-or-open)
+                              (eq found-type 'middle-or-open)
+                              (eq match-type found-type))
+                          (lua-find-matching-token-word found-token nil
+                                                        search-direction)))
+                    (when maybe-found-pos
+                      (goto-char maybe-found-pos)
+                      (throw 'found maybe-found-pos)))
+              ;; yes.
+              ;; if it is a not a middle kind, report the location
+              (when (not (or (eq found-type 'middle)
+                             (eq found-type 'middle-or-open)))
+                (throw 'found found-pos))
+              ;; if it is a middle-or-open type, record location, but keep searching.
+              ;; If we fail to complete the search, we'll report the location
+              (when (eq found-type 'middle-or-open)
+                (setq maybe-found-pos found-pos))
+              ;; Cannot use tail recursion. too much nesting on long chains of
+              ;; if/elseif. Will reset variables instead.
+              (setq token found-token)
+              (setq token-info (lua-get-block-token-info token))
+              (setq match (lua-get-token-match-re token-info search-direction))
+              (setq match-type (lua-get-token-type token-info))))))
+      maybe-found-pos)))
 
-(defun lua-goto-matching-block-token (&optional search-start parse-start)
+(defun lua-goto-matching-block-token (&optional search-start parse-start direction)
   "Find block begion/end token matching the one at the point.
 This function moves the point to the token that matches the one
 at the current point. Returns the point position of the first character of
@@ -552,7 +1034,7 @@ the matching token if successful, nil otherwise."
   (let ((case-fold-search nil))
     (if (looking-at lua-indentation-modifier-regexp)
         (let ((position (lua-find-matching-token-word (match-string 0)
-                                                      search-start)))
+                                                      search-start direction)))
           (and position
                (goto-char position))))))
 
@@ -582,7 +1064,8 @@ Returns final value of point as integer or nil if operation failed."
     (while t
       (unless (eql (forward-line (if back -1 1)) 0)    ;; 0 means success
         (throw 'found nil))
-      (unless (looking-at "\\s *\\(--.*\\)?$")       ;; blank lua line
+      (unless (or (looking-at "\\s *\\(--.*\\)?$")
+                  (lua-comment-or-string-p))
         (throw 'found (point))))))
 
 (eval-when-compile
@@ -590,31 +1073,24 @@ Returns final value of point as integer or nil if operation failed."
     "-+*/^.=<>~"))
 
 (defconst lua-cont-eol-regexp
-  "Regexp that matches the ending of a line that needs continuation
-
-This regexp starts from eol and looks for a binary operator or an unclosed
-block intro (i.e. 'for' without 'do' or 'if' without 'then') followed by
-an optional whitespace till the end of the line."
   (eval-when-compile
     (concat
      "\\(\\_<"
      (regexp-opt '("and" "or" "not" "in" "for" "while"
-                   "local" "function") t)
+                   "local" "function" "if" "until" "elseif" "return") t)
      "\\_>\\|"
      "\\(^\\|[^" lua-operator-class "]\\)"
      (regexp-opt '("+" "-" "*" "/" "^" ".." "==" "=" "<" ">" "<=" ">=" "~=") t)
      "\\)"
      "\\s *\\=")
-    ))
+    )
+  "Regexp that matches the ending of a line that needs continuation
 
+This regexp starts from eol and looks for a binary operator or an unclosed
+block intro (i.e. 'for' without 'do' or 'if' without 'then') followed by
+an optional whitespace till the end of the line.")
 
 (defconst lua-cont-bol-regexp
-  "Regexp that matches a line that continues previous one
-
-This regexp means, starting from point there is an optional whitespace followed
-by Lua binary operator. Lua is very liberal when it comes to continuation line,
-so we're safe to assume that every line that starts with a binop continues
-previous one even though it looked like an end-of-statement."
   (eval-when-compile
     (concat
      "\\=\\s *"
@@ -625,7 +1101,13 @@ previous one even though it looked like an end-of-statement."
      "\\($\\|[^" lua-operator-class "]\\)"
      "\\)")
 
-    ))
+    )
+  "Regexp that matches a line that continues previous one
+
+This regexp means, starting from point there is an optional whitespace followed
+by Lua binary operator. Lua is very liberal when it comes to continuation line,
+so we're safe to assume that every line that starts with a binop continues
+previous one even though it looked like an end-of-statement.")
 
 (defun lua-last-token-continues-p ()
   "Returns true if the last token on this line is a continuation token."
@@ -646,7 +1128,25 @@ previous one even though it looked like an end-of-statement."
   (let ((line-end (line-end-position)))
     (save-excursion
       (beginning-of-line)
+      ;; if first character of the line is inside string, it's a continuation
+      ;; if strings aren't supposed to be indented, `lua-calculate-indentation' won't even let
+      ;; the control inside this function
       (re-search-forward lua-cont-bol-regexp line-end t))))
+
+(defconst lua-block-starter-regexp
+  (eval-when-compile
+    (concat
+     "\\(\\_<"
+     (regexp-opt '("do" "while" "repeat" "until" "if" "then"
+                   "else" "elseif" "end" "for" "local") t)
+     "\\_>\\)")))
+
+(defun lua-first-token-starts-block-p ()
+  "Returns true if the first token on this line is a block starter token."
+  (let ((line-end (line-end-position)))
+    (save-excursion
+      (beginning-of-line)
+      (re-search-forward (concat "\\s *" lua-block-starter-regexp) line-end t))))
 
 (defun lua-is-continuing-statement-p (&optional parse-start)
   "Return non-nil if the line continues a statement.
@@ -662,6 +1162,7 @@ The criteria for a continuing statement are:
       (if parse-start (goto-char parse-start))
       (save-excursion (setq prev-line (lua-forward-line-skip-blanks 'back)))
       (and prev-line
+           (not (lua-first-token-starts-block-p))
            (or (lua-first-token-continues-p)
                (and (goto-char prev-line)
                     ;; check last token of previous nonblank line
@@ -671,43 +1172,68 @@ The criteria for a continuing statement are:
   "This is a helper function to lua-calculate-indentation-info. Don't
 use standalone."
   (cond
+   ;; function is a bit tricky to indent right. They can appear in a lot ot
+   ;; different contexts. Until I find a shortcut, I'll leave it with a simple
+   ;; relative indentation.
+   ;; The special cases are for indenting according to the location of the
+   ;; function. i.e.:
+   ;;       (cons 'absolute (+ (current-column) lua-indent-level))
+   ;; TODO: Fix this. It causes really ugly indentations for in-line functions.
    ((string-equal found-token "function")
-    ;; this is the location where we need to start searching for the
-    ;; matching opening token, when we encounter the next closing token.
-    ;; It is primarily an optimization to save some searching time.
-    (cons 'absolute (+ (save-excursion (goto-char found-pos)
-                                       (current-column))
-                       lua-indent-level)))
+    (cons 'relative lua-indent-level))
 
-   ((or (string-equal found-token "{")
-        (string-equal found-token "("))
+   ;; block openers
+   ((member found-token (list "{" "(" "["))
+	 (save-excursion
+	   ;; expression follows -> indent at start of next expression
+       ;; Last token on the line -> simple relative indent
+	   (if (and (not (search-forward-regexp "[[:space:]]--" (line-end-position) t))
+                (search-forward-regexp "[^[:space:]]" (line-end-position) t))
+           (cons 'absolute (1- (current-column)))
+         (cons 'relative lua-indent-level))))
+
+   ;; These are not really block starters. They should not add to indentation.
+   ;; The corresponding "then" and "do" handle the indentation.
+   ((member found-token (list "if" "for" "while"))
+    (cons 'relative 0))
+   ;; closing tokens follow: These are usually taken care of by
+   ;; lua-calculate-indentation-override.
+   ;; elseif is a bit of a hack. It is not handled separately, but it needs to
+   ;; nullify a previous then if on the same line.
+   ((member found-token (list "until" "elseif"))
     (save-excursion
-      ;; expression follows -> indent at start of next expression
-      (if (and (not (search-forward-regexp "[[:space:]]--" (line-end-position) t))
-               (search-forward-regexp "[^[:space:]]" (line-end-position) t))
-          (cons 'absolute (1- (current-column)))
-        (cons 'relative lua-indent-level))))
+      (let ((line (line-number-at-pos)))
+        (if (and (lua-goto-matching-block-token nil found-pos 'backward)
+                 (= line (line-number-at-pos)))
+            (cons 'remove-matching 0)
+          (cons 'relative 0)))))
 
-   ;; closing tokens follow
-   ((string-equal found-token "end")
+   ;; else is a special case; if its matching block token is on the same line,
+   ;; instead of removing the matching token, it has to replace it, so that
+   ;; either the next line will be indented correctly, or the end on the same
+   ;; line will remove the effect of the else.
+   ((string-equal found-token "else")
+     (save-excursion
+       (let ((line (line-number-at-pos)))
+         (if (and (lua-goto-matching-block-token nil found-pos 'backward)
+                  (= line (line-number-at-pos)))
+             (cons 'replace-matching (cons 'relative lua-indent-level))
+                   (cons 'relative lua-indent-level)))))
+
+   ;; Block closers. If they are on the same line as their openers, they simply
+   ;; eat up the matching indentation modifier. Otherwise, they pull
+   ;; indentation back to the matching block opener.
+   ((member found-token (list ")" "}" "]" "end"))
     (save-excursion
-      (lua-goto-matching-block-token nil found-pos)
-      (if (looking-at "\\_<function\\_>")
-          (cons 'absolute
-                (+ (current-indentation)
-                   (lua-calculate-indentation-block-modifier
-                    nil (point))))
-        (cons 'relative (- lua-indent-level)))))
+      (let ((line (line-number-at-pos)))
+        (lua-goto-matching-block-token nil found-pos 'backward)
+        (if (/= line (line-number-at-pos))
+            (lua-calculate-indentation-info (point))
+          (cons 'remove-matching 0)))))
 
-   ((or (string-equal found-token ")")
-        (string-equal found-token "}"))
-    (save-excursion
-      (lua-goto-matching-block-token nil found-pos)
-      (cons 'absolute
-            (+ (current-indentation)
-               (lua-calculate-indentation-block-modifier
-                nil (point))))))
-
+   ;; Everything else. This is from the original code: If opening a block
+   ;; (match-data 1 exists), then push indentation one level up, if it is
+   ;; closing a block, pull it one level down.
    ('other-indentation-modifier
     (cons 'relative (if (nth 2 (match-data))
                         ;; beginning of a block matched
@@ -715,28 +1241,91 @@ use standalone."
                       ;; end of a block matched
                       (- lua-indent-level))))))
 
+(defun  lua-add-indentation-info-pair (pair info)
+  "Add the given indentation info pair to the list of indentation information.
+This function has special case handling for two tokens: remove-matching,
+and replace-matching. These two tokens are cleanup tokens that remove or
+alter the effect of a previously recorded indentation info.
 
-(defun lua-calculate-indentation-info (&optional parse-start parse-end)
+When a remove-matching token is encountered, the last recorded info, i.e.
+the car of the list is removed. This is used to roll-back an indentation of a
+block opening statement when it is closed.
+
+When a replace-matching token is seen, the last recorded info is removed,
+and the cdr of the replace-matching info is added in its place. This is used
+when a middle-of the block (the only case is 'else') is seen on the same line
+the block is opened."
+  (cond
+   ( (listp (cdr-safe pair))
+     (nconc pair info))
+   ( (eq 'remove-matching (car pair))
+     ; Remove head of list
+     (cdr info))
+   ( (eq 'replace-matching (car pair))
+     ; remove head of list, and add the cdr of pair instead
+     (cons (cdr pair) (cdr info)))
+   ( t
+     ; Just add the pair
+     (cons pair info))))
+
+(defun lua-calculate-indentation-info-1 (indentation-info bound)
+  "Helper function for `lua-calculate-indentation-info'.
+
+Return list of indentation modifiers from point to BOUND."
+  (while (lua-find-regexp 'forward lua-indentation-modifier-regexp
+                          bound)
+    (let ((found-token (match-string 0))
+          (found-pos (match-beginning 0))
+          (found-end (match-end 0))
+          (data (match-data)))
+      (setq indentation-info
+            (lua-add-indentation-info-pair
+             (lua-make-indentation-info-pair found-token found-pos)
+             indentation-info))))
+  indentation-info)
+
+
+(defun lua-calculate-indentation-info (&optional parse-end)
   "For each block token on the line, computes how it affects the indentation.
 The effect of each token can be either a shift relative to the current
 indentation level, or indentation to some absolute column. This information
 is collected in a list of indentation info pairs, which denote absolute
 and relative each, and the shift/column to indent to."
-  (let* ((line-end (line-end-position))
-         (search-stop (if parse-end (min parse-end line-end) line-end))
-         (indentation-info nil))
-    (if parse-start (goto-char parse-start))
-    (save-excursion
-      (beginning-of-line)
-      (while (lua-find-regexp 'forward lua-indentation-modifier-regexp
-                              search-stop)
-        (let ((found-token (match-string 0))
-              (found-pos (match-beginning 0))
-              (found-end (match-end 0))
-              (data (match-data)))
-          (setq indentation-info
-                (cons (lua-make-indentation-info-pair found-token found-pos) indentation-info)))))
+  (let ((combined-line-end (line-end-position))
+        indentation-info)
+
+    (while (lua-is-continuing-statement-p)
+      (lua-forward-line-skip-blanks 'back))
+
+    ;; calculate indentation modifiers for the line itself
+    (setq indentation-info (list (cons 'absolute (current-indentation))))
+
+    (back-to-indentation)
+    (setq indentation-info
+          (lua-calculate-indentation-info-1
+           indentation-info (min parse-end (line-end-position))))
+
+    ;; and do the following for each continuation line before PARSE-END
+    (while (and (eql (forward-line 1) 0)
+                (<= (point) parse-end))
+
+      ;; handle continuation lines:
+      (if (lua-is-continuing-statement-p)
+          ;; if it's the first continuation line, add one level
+          (unless (eq (car (car indentation-info)) 'continued-line)
+            (push (cons 'continued-line lua-indent-level) indentation-info))
+
+        ;; if it's the first non-continued line, subtract one level
+        (when (eq (car (car indentation-info)) 'continued-line)
+          (pop indentation-info)))
+
+      ;; add modifiers found in this continuation line
+      (setq indentation-info
+            (lua-calculate-indentation-info-1
+             indentation-info (min parse-end (line-end-position)))))
+
     indentation-info))
+
 
 (defun lua-accumulate-indentation-info (info)
   "Accumulates the indentation information previously calculated by
@@ -753,118 +1342,146 @@ shift, or the absolute column to indent to."
           info-list)
     (cons type accu)))
 
-(defun lua-calculate-indentation-block-modifier (&optional parse-start
-                                                           parse-end)
+(defun lua-calculate-indentation-block-modifier (&optional parse-end)
   "Return amount by which this line modifies the indentation.
 Beginnings of blocks add lua-indent-level once each, and endings
 of blocks subtract lua-indent-level once each. This function is used
 to determine how the indentation of the following line relates to this
 one."
-  (if parse-start (goto-char parse-start))
-  (let ((case-fold-search nil)
-        (indentation-info (lua-accumulate-indentation-info
-                           (lua-calculate-indentation-info nil parse-end))))
+  (let (indentation-info)
+    (save-excursion
+      ;; First go back to the line that starts it all
+      ;; lua-calculate-indentation-info will scan through the whole thing
+      (let ((case-fold-search nil))
+        (setq indentation-info
+              (lua-accumulate-indentation-info
+               (lua-calculate-indentation-info parse-end)))))
+
     (if (eq (car indentation-info) 'absolute)
-        (- (cdr indentation-info)
-           (current-indentation)
-           ;; reduce indentation if this line also starts new continued statement
-           ;; or next line cont. this line
-           ;;This is for aesthetic reasons: the indentation should be
-           ;;dosomething(d +
-           ;;   e + f + g)
-           ;;not
-           ;;dosomething(d +
-           ;;      e + f + g)"
-           (save-excursion
-             (or (and (lua-last-token-continues-p) lua-indent-level)
-                 (and (lua-forward-line-skip-blanks) (lua-first-token-continues-p) lua-indent-level)
-                 0)))
-      (+ (lua-calculate-unindentation)
-         (cdr indentation-info)
-         (if (lua-is-continuing-statement-p) (- lua-indent-level) 0)))))
+        (- (cdr indentation-info) (current-indentation))
+      (cdr indentation-info))))
 
-(defconst lua-unindentation-regexp
-  ;; Compare the following situations:
-  ;; {               {
-  ;;    a,              a,
-  ;;    b,              b,
-  ;; }                  c}
-  ;;
-  ;; Basically, if close-token is prepended with some expression, such
-  ;; expression  should still  be indented  and thus  any close-tokens
-  ;; after an  expression doesn't  unindent the line.
-  ;;
-  ;; Whitespace and semicolons aren't an expression and may be skipped
-  ;; (technically, multiline  comment --[[ ]] ending on  the same line
-  ;; might also be skipped, but it's not handled properly right now).
-  ;;
-  ;; skip whitespaces and semicolons, closing keywords/parentheses
-  (concat "[\\s ;]*"
-          "\\(?1:\\_<" (regexp-opt '("else" "elseif" "until" "end")) "\\_>"
-          "\\|" (regexp-opt '("]" "}" ")")) "\\)"))
 
-(defun lua-calculate-unindentation (&optional parse-start)
-  "Return amount, by which this line should be unindented.
+(eval-when-compile
+  (defconst lua--function-name-rx
+    '(seq symbol-start
+          (+ (any alnum "_"))
+          (* "." (+ (any alnum "_")))
+          (? ":" (+ (any alnum "_")))
+          symbol-end)
+    "Lua function name regexp in `rx'-SEXP format."))
 
-Starting  from the  beginning of  the line,  look for  an  sequence of
-block-closing tokens with  only whitespace/semicolons in between them.
-For each of these tokens, shift  indentation to the left by the amount
-specified in lua-indent-level.
 
-If PARSE-START is  not nil, start from the beginning  of the line that
-contains position PARSE-START."
-  (let ((unindentation-accumulator 0)
+(defconst lua--left-shifter-regexp
+  (eval-when-compile
+    (rx
+     ;; This regexp should answer the following questions:
+     ;; 1. is there a left shifter regexp on that line?
+     ;; 2. where does block-open token of that left shifter reside?
+     ;;
+     ;; NOTE: couldn't use `group-n' keyword of `rx' macro, because it was
+     ;; introduced in Emacs 24.2 only, so for the sake of code clarity the named
+     ;; groups don't really match anything, they just report the position of the
+     ;; match.
+     (or (seq (regexp "\\_<local[ \t]+") (regexp "\\(?1:\\)function\\_>"))
+         (seq (eval lua--function-name-rx) (* blank) (regexp "\\(?1:\\)[{(]"))
+         (seq (or
+               ;; assignment statement prefix
+               (seq (* nonl) (not (any "<=>~")) "=" (* blank))
+               ;; return statement prefix
+               (seq word-start "return" word-end (* blank)))
+              (regexp "\\(?1:\\)")
+              ;; right hand side
+              (or "{"
+                  "function"
+                  (seq
+                   (eval lua--function-name-rx) (* blank)
+                   (regexp "\\(?1:\\)") (any "({")))))))
+
+  "Regular expression that matches left-shifter expression.
+
+Left-shifter expression is defined as follows.  If a block
+follows a left-shifter expression, its contents & block-close
+token should be indented relative to left-shifter expression
+indentation rather then to block-open token.
+
+For example:
+   -- 'local a = ' is a left-shifter expression
+   -- 'function' is a block-open token
+   local a = function()
+      -- block contents is indented relative to left-shifter
+      foobarbaz()
+   -- block-end token is unindented to left-shifter indentation
+   end
+
+The following left-shifter expressions are currently handled:
+1. local function definition with function block, begin-end
+2. function call with arguments block, () or {}
+3. assignment/return statement with
+   - table constructor block, {}
+   - function call arguments block, () or {} block
+   - function expression a.k.a. lambda, begin-end block.")
+
+
+(defun lua-point-is-after-left-shifter-p ()
+  "Check if point is right after a left-shifter expression.
+
+See `lua--left-shifter-regexp' for description & example of
+left-shifter expression. "
+  (save-excursion
+    (let ((old-point (point)))
+      (back-to-indentation)
+      (and
+       (/= (point) old-point)
+       (looking-at lua--left-shifter-regexp)
+       (= old-point (match-end 1))))))
+
+(defun lua-calculate-indentation-override (&optional parse-start)
+  "Return overriding indentation amount for special cases.
+Look for an uninterrupted sequence of block-closing tokens that starts
+at the beginning of the line. For each of these tokens, shift indentation
+to the left by the amount specified in lua-indent-level."
+  (let ((indentation-modifier 0)
         (case-fold-search nil)
         (block-token nil))
     (save-excursion
       (if parse-start (goto-char parse-start))
+      ;; Look for the last block closing token
       (back-to-indentation)
-
-      (while (and (looking-at lua-unindentation-regexp)
-                  (not (lua-comment-or-string-p)))
-        (let ((last-token (match-string 1)))
-          (setq unindentation-accumulator (+ unindentation-accumulator
-                                             lua-indent-level))
-          (forward-char (length (match-string 0)))))
-      unindentation-accumulator)))
+      (if (and (not (lua-comment-or-string-p))
+               (looking-at lua-indentation-modifier-regexp)
+               (let ((token-info (lua-get-block-token-info (match-string 0))))
+                 (and token-info
+                      (not (eq 'open (lua-get-token-type token-info))))))
+          (when (lua-goto-matching-block-token nil nil 'backward)
+            ;; Exception cases: when the start of the line is an assignment,
+            ;; go to the start of the assignment instead of the matching item
+            (let ((block-start-column (current-column))
+                  (block-start-point (point)))
+              (if (lua-point-is-after-left-shifter-p)
+                  (current-indentation)
+                block-start-column)))))))
 
 (defun lua-calculate-indentation (&optional parse-start)
-  "Return appropriate indentation for current line as Lua code.
-In usual case returns an integer: the column to indent to."
-  (let ((pos (point))
-        shift-amt)
-    (save-excursion
-      (catch 'indent
-        (if parse-start (setq pos (goto-char parse-start)))
-        (beginning-of-line)
+  "Return appropriate indentation for current line as Lua code."
+  (save-excursion
+    (let ((continuing-p (lua-is-continuing-statement-p))
+          (cur-line-begin-pos (line-beginning-position)))
+      (or
+       ;; when calculating indentation, do the following:
+       ;; 1. check, if the line starts with indentation-modifier (open/close brace)
+       ;;    and if it should be indented/unindented in special way
+       (lua-calculate-indentation-override)
 
-        ;; if bol is inside a string, suppress any indentation
-        ;; or all of the whitespace will go into the literal
-        (when (lua-string-p)
-          (throw 'indent 0))
+       (when (lua-forward-line-skip-blanks 'back)
+         ;; the order of function calls here is important. block modifier
+         ;; call may change the point to another line
+         (let* ((modifier
+                 (lua-calculate-indentation-block-modifier cur-line-begin-pos)))
+           (+ (current-indentation) modifier)))
 
-        (setq shift-amt (if (lua-is-continuing-statement-p) lua-indent-level 0))
-        (if (bobp)          ; If we're at the beginning of the buffer, no change.
-            (+ (current-indentation) shift-amt)
-          ;; This code here searches backwards for a "block beginning/end"
-          ;; It snarfs the indentation of that, plus whatever amount the
-          ;; line was shifted left by, because of block end tokens. It
-          ;; then adds the indentation modifier of that line to obtain the
-          ;; final level of indentation.
-          ;; Finally, if this line continues a statement from the
-          ;; previous line, add another level of indentation.
-          (if (lua-backwards-to-block-begin-or-end)
-              ;; now we're at the line with block beginning or end.
-              (max (+ (current-indentation)
-                      (lua-calculate-indentation-block-modifier)
-                      shift-amt)
-                   0)
-            ;; Failed to find a block begin/end.
-            ;; Just use the previous line's indent.
-            (goto-char pos)
-            (beginning-of-line)
-            (forward-line -1)
-            (+ (current-indentation) shift-amt)))))))
+       ;; 4. if there's no previous line, indentation is 0
+       0))))
 
 (defun lua-beginning-of-proc (&optional arg)
   "Move backward to the beginning of a lua proc (or similar).
@@ -947,7 +1564,7 @@ When called interactively, switch to the process buffer."
       (accept-process-output (get-buffer-process (current-buffer)))
       (goto-char (point-max))))
   ;; when called interactively, switch to process buffer
-  (if (called-interactively-p 'any)
+  (if (lua--called-interactively-p 'any)
       (switch-to-buffer lua-process-buffer)))
 
 (defun lua-kill-process ()
@@ -971,6 +1588,28 @@ When called interactively, switch to the process buffer."
 If `lua-process' is nil or dead, start a new process first."
   (interactive)
   (lua-send-region (line-beginning-position) (line-end-position)))
+
+(defun lua-send-defun (pos)
+  "Send the function definition around point to lua subprocess."
+  (interactive "d")
+  (save-excursion
+    (let ((start (if (save-match-data (looking-at "^function[ \t]"))
+                     ;; point already at the start of "function".
+                     ;; We need to handle this case explicitly since
+                     ;; lua-beginning-of-proc will move to the
+                     ;; beginning of the _previous_ function.
+                     (point)
+                   ;; point is not at the beginning of function, move
+                   ;; there and bind start to that position
+                   (lua-beginning-of-proc)
+                   (point)))
+          (end (progn (lua-end-of-proc) (point))))
+
+      ;; make sure point is in a function defintion before sending to
+      ;; the subprocess
+      (if (and (>= pos start) (< pos end))
+          (lua-send-region start end)
+        (error "Not on a function definition")))))
 
 (defun lua-send-region (start end)
   "Send region to lua subprocess."
@@ -1039,7 +1678,7 @@ t, otherwise return nil.  BUF must exist."
       (if (not (eq major-mode 'lua-mode))
           (lua-mode))
       ;; FIXME: fix offset when executing region
-      (goto-line line)
+      (goto-char (point-min)) (forward-line (1- line))
       (message "Jumping to error in file %s on line %d" file line))))
 
 (defun lua-prompt-line ()
@@ -1063,22 +1702,7 @@ t, otherwise return nil.  BUF must exist."
   (if lua-always-show
       (display-buffer lua-process-buffer)))
 
-(defun lua-send-proc ()
-  "Send proc around point to lua subprocess."
-  (interactive)
-  (let (beg end)
-    (save-excursion
-      (lua-beginning-of-proc)
-      (setq beg (point))
-      (lua-end-of-proc)
-      (setq end (point)))
-    (or (and lua-process
-             (comint-check-proc lua-process-buffer))
-        (lua-start-process lua-default-application))
-    (comint-simple-send lua-process
-                        (buffer-substring beg end))
-    (if lua-always-show
-        (display-buffer lua-process-buffer))))
+(defalias 'lua-send-proc 'lua-send-defun)
 
 ;; FIXME: This needs work... -Bret
 (defun lua-send-buffer ()
@@ -1178,99 +1802,7 @@ left out."
 (define-key lua-mode-menu [search-documentation]
   '("Search Documentation" . lua-search-documentation))
 
-(defsubst lua-put-char-property (pos property value &optional object)
-  (if value
-      (put-text-property pos (1+ pos) property value object)
-    (remove-text-properties pos (1+ pos) (list property nil))))
-
-(defsubst lua-put-char-syntax-table (pos value &optional object)
-  (lua-put-char-property pos 'syntax-table value object))
-
-(defsubst lua-get-multiline-delim-syntax (type)
-  (cond ((eq type 'string) '(15))
-        ((eq type 'comment) '(14))
-        (nil)))
-
-(defun lua-mark-char-multiline-delim (pos type)
-  "Mark character as a delimiter of Lua multiline construct
-
-If TYPE is string, mark char  as string delimiter. If TYPE is comment,
-mark char as comment delimiter.  Otherwise, remove the mark if any."
-  (let ((old-modified-p (buffer-modified-p)))
-    (unwind-protect
-        (lua-put-char-syntax-table pos (lua-get-multiline-delim-syntax type))
-      (set-buffer-modified-p old-modified-p))))
-
-(defsubst lua-inside-multiline-p (&optional pos)
-  (let ((status (syntax-ppss pos)))
-    (or (eq (elt status 3) t)                ;; inside generic string
-        (eq (elt status 7) 'syntax-table)))) ;; inside generic comment
-
-(defun lua-get-multiline-start (&optional pos)
-  (interactive)
-  (when (lua-inside-multiline-p pos) ;; return string/comment start
-    (elt (syntax-ppss pos) 8)))
-
-(defun lua-unmark-multiline-literals (&optional begin end)
-  "Clears all Lua multiline construct markers in region
-
-If BEGIN is nil, start from `beginning-of-buffer'.
-If END is nil, stop at `end-of-buffer'."
-  (interactive)
-  (let ((old-modified-p (buffer-modified-p)))
-    (unwind-protect
-        (remove-text-properties (or begin (point-min)) (or end (point-max)) '(syntax-table ()))
-      (set-buffer-modified-p old-modified-p)))
-  (font-lock-fontify-buffer))
-
-(defun lua-mark-multiline-region (begin end)
-  (let ((type (if (eq ?- (char-after begin)) 'comment 'string)))
-  (lua-mark-char-multiline-delim begin type)
-  (when end
-    (lua-mark-char-multiline-delim (1- end) type))))
-
-(defun lua-mark-all-multiline-literals (&optional begin end)
-  "Marks all Lua multiline constructs in region
-
-If BEGIN is nil, start from `beginning-of-buffer'.
-If END is nil, stop at `end-of-buffer'."
-  (interactive)
-
-  (if (and (called-interactively-p 'any) (use-region-p))
-      (setq begin (region-beginning)
-            end (region-end)))
-
-  (lua-unmark-multiline-literals begin end)
-  (save-excursion
-    (goto-char (or begin (point-min)))
-
-    (while (and
-            ;; must check  for point range,  because matching previous
-            ;; multiline  end might  move  point beyond  end and  this
-            ;; drives `re-search-forward' crazy
-            (if end (< (point) end) t)
-            ;; look for
-            ;; 1. (optional) two or more dashes followed by
-            ;; 2. lua multiline delimiter [[
-            (re-search-forward "\\(?2:--\\)?\\[\\(?1:=*\\)\\[" end 'noerror))
-      ;; match-start + 1 is considered instead of match-start, because
-      ;; such  approach  handles  '---[[' situation  correctly:  Emacs
-      ;; thinks 2nd dash (i.e.  match-start) is not yet a comment, but
-      ;; the third one is, hence the +1.  In all the other situations,
-      ;; '+1'  is safe  to use  because  it bears  the same  syntactic
-      ;; properties, i.e.  if match-start is inside string-or-comment,
-      ;; then '+1' is too and vice versa.
-      ;;
-      ;; PS. ping me if you find a situation in which this is not true
-      (unless (lua-comment-or-string-p (1+ (match-beginning 0)))
-        (let (ml-begin ml-end)
-          (setq ml-begin (match-beginning 0))
-          (when (re-search-forward (format "\\]%s\\]" (or (match-string 1) "")) nil 'noerror)
-            ;; (message "found match %s" (match-string 0))
-            (setq ml-end (match-end 0)))
-          (lua-mark-multiline-region ml-begin ml-end))))))
 
 (provide 'lua-mode)
-
 
 ;;; lua-mode.el ends here

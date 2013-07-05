@@ -1,10 +1,9 @@
 ;;; emacs-rc-lua-mode.el ---
 
-;; Author: Yegor Bayev <kodxxx@gmail.com>
+;; Author: Yegor Bayev <baev.egor@gmail.com>
 ;; Created: Tue Jul 12 12:16:43 2011
 
-(add-to-list 'load-path "~/.emacs.d/plugins/lua-mode")
-
+(kodx/add-load-path "plugins/lua-mode")
 
 (autoload 'lua-mode "lua-mode" "Lua editing mode." t)
 (add-to-list 'auto-mode-alist '("\\.lua$" . lua-mode))

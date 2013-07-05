@@ -1,6 +1,6 @@
-(add-to-list 'load-path "~/.emacs.d/plugins/color-theme")
-(require 'color-theme)
-(add-to-list 'load-path "~/.emacs.d/themes")
 
-(load-theme 'tangotangokx)
+;; Author: Yegor Bayev <baev.egor@gmail.com>
 
+(add-to-list 'custom-theme-load-path (kodx/get-config-dir "themes"))
+
+(load-theme 'tangotangokx t)

@@ -1,10 +1,10 @@
 ;;; emacs-rc-ccmode.el ---
 
-;; Author: Yegor Bayev <kodxxx@gmail.com>
+;; Author: Yegor Bayev <baev.egor@gmail.com>
 
 (require 'cc-mode)
 
-(add-to-list 'load-path "~/.emacs.d/plugins/google-c-style")
+(kodx/add-load-path "plugins/google-c-style")
 (require 'google-c-style)
 
 ;; customisation of cc-mode
@@ -19,7 +19,7 @@
   (c-toggle-auto-hungry-state 0)
   ;; minor modes
   (auto-fill-mode 1)
-  (gtags-mode 1)
+  ;; (gtags-mode 1)
   (hs-minor-mode 1)
   ;; local keys
   ;;(local-set-key [return] 'newline-and-indent)
@@ -30,7 +30,7 @@
 (add-hook 'c-mode-common-hook 'google-set-c-style)
 (add-hook 'c-mode-common-hook 'google-make-newline-indent)
 
-(add-hook 'c-mode-common-hook (lambda() (local-set-key (kbd "<backtab>") 'ff-find-other-file))) 
+(add-hook 'c-mode-common-hook (lambda() (local-set-key (kbd "<backtab>") 'ff-find-other-file)))
 
 (require 'info-look)
 (info-lookup-add-help

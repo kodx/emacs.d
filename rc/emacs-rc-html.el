@@ -1,6 +1,6 @@
 ;;; emacs-rc-html.el ---
 
-;; Author: Yegor Bayev <kodxxx@gmail.com>
+;; Author: Yegor Bayev <baev.egor@gmail.com>
 ;; Created: Thu May 19 23:33:22 2011
 
 (defvar hexcolour-keywords
@@ -10,6 +10,7 @@
          (match-end 0)
          'face (list :background
                      (match-string-no-properties 0)))))))
+
 (defun hexcolour-add-to-font-lock ()
   (font-lock-add-keywords nil hexcolour-keywords))
 

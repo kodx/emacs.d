@@ -1,6 +1,20 @@
-;; Emacs 23 config file
-;; author: Yegor Bayev (kodxxx@gmail.com)
+;; Emacs 24 config file
+;; author: Yegor Bayev <baev.egor@gmail.com>
 ;; most configs taken from Alex Ott config http://alexott.net/en/emacs/
+
+(setq debug-on-error t)
+
+(defun kodx/get-config-dir (VPath)
+  "get default config dir for plugins"
+  (concat user-emacs-directory
+          (convert-standard-filename VPath))
+)
+
+(defun kodx/add-load-path (VPath)
+  "add to load path"
+  (add-to-list 'load-path
+               (kodx/get-config-dir VPath))
+)
 
 ;; set init file for custom settings
 (setq custom-file "~/.emacs.d/custom.el")
@@ -12,8 +26,6 @@
 ;; add commonly used paths
 (push "~/work/dev" load-path)
 
-;; load plugins
-(load "~/.emacs.d/rc/emacs-rc-whitespace.el")
 
 ;; load concrete packages
 (load "~/.emacs.d/rc/emacs-rc-general.el")
@@ -23,8 +35,14 @@
 (load "~/.emacs.d/rc/emacs-rc-yasnippet.el")
 (load "~/.emacs.d/rc/emacs-rc-theme.el")
 (load "~/.emacs.d/rc/emacs-rc-font.el")
-(load "~/.emacs.d/rc/emacs-rc-osd.el")
 (load "~/.emacs.d/rc/emacs-rc-backup.el")
+(load "~/.emacs.d/rc/emacs-rc-ido-mode.el")
+(load "~/.emacs.d/rc/emacs-rc-jump-char.el")
+(load "~/.emacs.d/rc/emacs-rc-syntax-subword.el")
+(load "~/.emacs.d/rc/emacs-rc-multiple-cursors.el")
+
+;; load plugins
+(load "~/.emacs.d/rc/emacs-rc-whitespace.el")
 
 ;; automation
 (load "~/.emacs.d/rc/emacs-rc-auto-insert.el")
@@ -38,9 +56,13 @@
 
 ;; Google's Go
 (load "~/.emacs.d/rc/emacs-rc-go-mode.el")
-(load "~/.emacs.d/rc/emacs-rc-go-autocomplete.el")
+
+;; recent files
+(load "~/.emacs.d/rc/emacs-rc-recentf.el")
 
 ;; toggle fullscreen
-(toggle-fullscreen)
+(cond (window-system
+    (toggle-fullscreen)
+))
 
 ;; init.el

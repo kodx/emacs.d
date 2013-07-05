@@ -1,9 +1,9 @@
 ;;; emacs-rc-common-hooks.el ---
 
-;; Author: Yegor Bayev <kodxxx@gmail.com>
+;; Author: Yegor Bayev <baev.egor@gmail.com>
 
-(add-to-list 'load-path "~/.emacs.d/plugins/common")
-(require 'smart-operator)
+(kodx/add-load-path "plugins/common")
+;; (require 'smart-operator)
 
 ;; common settings for different text & programming modes
 (defun alexott/common-hook ()

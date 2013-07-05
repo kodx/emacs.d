@@ -1,8 +1,6 @@
 ;;; emacs-rc-kbd.el ---
 
-;; Author: Yegor Bayev <kodxxx@gmail.com>
-;; Keywords:
-;; Requirements:
+;; Author: Yegor Bayev <baev.egor@gmail.com>
 
 ;; (global-set-key [button5]  'scroll-up)
 ;; (global-set-key [button4]  'scroll-down)
@@ -30,7 +28,11 @@
 ;; (global-set-key [f6] 'bury-buffer)
 (global-set-key [f7] 'query-replace)
 (global-set-key [f8] 'next-error)
-(global-set-key [f10] 'save-buffers-kill-emacs)
+(global-set-key [f10] (lambda ()
+                         "Save all buffers and exit without query"
+                         (interactive)
+                         (save-some-buffers t)
+                         (save-buffers-kill-emacs)))
 (global-set-key [f12] 'kill-emacs)
 ;; (global-set-key "\M-0" 'buffer-menu)
 ;; (global-set-key [(control menu)] 'popup-mode-menu)

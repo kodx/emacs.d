@@ -1,7 +1,7 @@
 
 
 (setq
-  user-full-name "Name Surname"
-  user-mail-address "my@email.com"
+  user-full-name "Yegor Bayev"
+  user-mail-address "baev.egor@gmail.com"
 )
 

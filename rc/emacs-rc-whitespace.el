@@ -1,9 +1,10 @@
 ;;; emacs-rc-whitespace.el ---
 
-;; Author: Yegor Bayev <kodxxx@gmail.com>
+;; Author: Yegor Bayev <baev.egor@gmail.com>
 ;; Created: Thu Sep 22 10:19:29 2011
 
-(add-to-list 'load-path "~/.emacs.d/plugins/whitespace")
+(kodx/add-load-path "plugins/whitespace")
+
 (require 'whitespace)
 
 ;;; emacs-rc-whitespace.el ends here

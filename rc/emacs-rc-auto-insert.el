@@ -5,16 +5,17 @@
 ;; Keywords:
 ;; Requirements:
 ;; Status: not intended to be distributed yet
-;; Modified by: Yegor Bayev <kodxxx@gmail.com>
+;; Modified by: Yegor Bayev <baev.egor@gmail.com>
 
 ;; auto-insert stuff
 (add-hook 'find-file-hooks 'auto-insert)
-(setq auto-insert-directory (concat (getenv "HOME") "/.emacs.d/auto-insert/"))
+(setq auto-insert-directory (kodx/get-config-dir "auto-insert/"))
 (setq auto-insert 'other)
 (setq auto-insert-query nil)
 
 (setq auto-insert-alist '(("\\.muse$" . ["insert.muse"])
                           ("\\.sh$" . ["insert.sh" alexott/auto-update-defaults])
+                          ("\\.py$" . ["insert.py" alexott/auto-update-defaults])
                           ("\\.lisp$" . ["insert.lisp" alexott/auto-update-defaults])
                           ("\\.el$" . ["insert.el" alexott/auto-update-defaults])
                           ("\\.erl$" . ["insert.erl" alexott/auto-update-defaults])

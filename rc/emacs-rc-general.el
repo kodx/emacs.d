@@ -1,5 +1,7 @@
 ;;; emacs-rc-general.el ---
 
+;; Author: Yegor Bayev <baev.egor@gmail.com>
+
 (defconst win
   (eq system-type 'windows-nt)
   "Are we running on Win32 system?")
@@ -20,7 +22,7 @@
 (put 'narrow-to-region 'disabled nil)
 
 ;; general setings
-(setq
+(setq-default
     text-mode-hook (quote (turn-on-auto-fill text-mode-hook-identify))
     auto-compression-mode t         ;; Toggle automatic file compression and uncompression
     vc-follow-symlinks t            ;; follow symlinks and don't ask
@@ -35,10 +37,16 @@
     w3m-use-cookies t
     ediff-window-setup-function 'ediff-setup-windows-plain
     ring-bell-function 'ignore
+    bidi-display-reordering nil
 )
 
 ;;decor
-(setq
+(require 'tree-widget)
+(require 'linum)                    ;; show line numbers
+(global-linum-mode 1)
+(blink-cursor-mode -1)              ;; no blinking cursor ever
+(show-paren-mode 1)                 ;; show pair parentheses
+(setq-default
     inhibit-startup-screen t            ;; Remove startupscreen and open an empty document
     initial-scratch-message nil
     cursor-in-non-selected-windows nil
@@ -48,15 +56,12 @@
     use-dialog-box 0
     column-number-mode t
     display-time-mode t
-    show-paren-mode t
     custom-buffer-done-kill t         ;; Remove *Customize Group:* buffer
     transient-mark-mode t
     x-stretch-cursor t                ;; Show cursor as block, not underline
+    show-paren-delay 0                ;; set paren show delay
 )
-(require 'tree-widget)
-(require 'linum)                    ;; show line numbers
-(global-linum-mode 1)
-(blink-cursor-mode -1)              ;; no blinking cursor ever
+
 
 ;; remove scroll bars, set font
 (cond (window-system
@@ -66,7 +71,7 @@
 ))
 
 ;; behavior
-(setq
+(setq-default
     scroll-conservatively 50
     scroll-margin 3
     scroll-preserve-screen-position t
@@ -94,7 +99,7 @@
 
 ;; time and date
 (load-library "time")
-(setq
+(setq-default
     display-time-24hr-format t
     display-time-mail-file t
     display-time-form-list (list 'time 'load)
@@ -138,10 +143,10 @@
 ;; (add-hook 'htmlize-after-hook 'alexott/add-google-analytics)
 
 ;; untabify
-;; (defun untabify-file ()
-;;   (save-excursion
-;;     (delete-trailing-whitespace)
-;;     (untabify (point-min) (point-max))))
+(defun untabify-file ()
+  (save-excursion
+    (delete-trailing-whitespace)
+    (untabify (point-min) (point-max))))
 
 ;; footnote mode
 (autoload 'footnote-mode "footnote" nil t)
@@ -150,10 +155,6 @@
 ;;  (footnote-init)
 ;;  )
 ;; (add-hook 'footnote-mode-hook 'my-fn-hook)
-
-;; chm viewer
-;(add-to-list 'load-path "~/.emacs.d/plugins/chm-view")
-;(require 'chm-view)
 
 ;;
 (add-to-list 'auto-mode-alist '("\\.log$" . auto-revert-mode))
@@ -219,4 +220,3 @@
 )
 
 ;;; emacs-rc-general.el ends here
-
