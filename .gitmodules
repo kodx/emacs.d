@@ -1,0 +1,3 @@
+[submodule "plugins/yasnippet"]
+	path = plugins/yasnippet
+	url = git@github.com:kodx/yasnippet.git
