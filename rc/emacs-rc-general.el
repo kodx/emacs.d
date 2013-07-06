@@ -223,4 +223,11 @@
                 '(2 "_NET_WM_STATE_MAXIMIZED_HORZ" 0))
 )
 
+(defun toggle-fullscreen-darwin ()
+  "Toggle full screen darwin style"
+  (interactive)
+  (set-frame-parameter
+     nil 'fullscreen
+     (when (not (frame-parameter nil 'fullscreen)) 'fullboth)))
+
 ;;; emacs-rc-general.el ends here

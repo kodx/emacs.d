@@ -67,5 +67,7 @@
 (cond (nix
     (toggle-fullscreen)
 ))
-
+(cond (osx
+       (toggle-fullscreen-darwin)
+))
 ;; init.el
