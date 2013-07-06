@@ -1,3 +1,6 @@
 [submodule "plugins/yasnippet"]
 	path = plugins/yasnippet
 	url = git@github.com:kodx/yasnippet.git
+[submodule "plugins/jump-char"]
+	path = plugins/jump-char
+	url = https://github.com/lewang/jump-char.git

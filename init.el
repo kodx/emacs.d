@@ -2,7 +2,8 @@
 ;; author: Yegor Bayev <baev.egor@gmail.com>
 ;; most configs taken from Alex Ott config http://alexott.net/en/emacs/
 
-(setq debug-on-error t)
+;; debug on
+;; (setq debug-on-error t)
 
 (defun kodx/get-config-dir (VPath)
   "get default config dir for plugins"
