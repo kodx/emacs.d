@@ -2,8 +2,12 @@
 
 ;; Author: Yegor Bayev <baev.egor@gmail.com>
 
-(kodx/add-load-path "plugins/common")
 ;; (require 'smart-operator)
+
+;; make dir if not exists
+(defun kodx/mkdir-if-not-exists (VPath)
+  (if (file-exists-p VPath) () (make-directory-internal VPath))
+)
 
 ;; common settings for different text & programming modes
 (defun alexott/common-hook ()
@@ -62,6 +66,8 @@
   (when (member major-mode alexott/untabify-modes)
     (untabify (point-min) (point-max))))
 (add-hook 'before-save-hook 'alexott/untabify-hook)
+
+(kodx/add-load-path "plugins/common")
 
 
 ;;; emacs-rc-common-hooks.el ends here

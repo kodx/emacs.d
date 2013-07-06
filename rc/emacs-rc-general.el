@@ -6,7 +6,7 @@
   (eq system-type 'windows-nt)
   "Are we running on Win32 system?")
 
-(defconst nix
+(defconst lin
   (eq system-type 'gnu/linux)
   "Are we running on *nix system?")
 
@@ -215,7 +215,7 @@
                               (concat accum (car strings) joiner)))))
 
 ;; Open emacs maximized
-(defun toggle-fullscreen ()
+(defun toggle-fullscreen-lin ()
         (interactive)
         (x-send-client-message nil 0 nil "_NET_WM_STATE" 32
                 '(2 "_NET_WM_STATE_MAXIMIZED_VERT" 0))
@@ -223,7 +223,7 @@
                 '(2 "_NET_WM_STATE_MAXIMIZED_HORZ" 0))
 )
 
-(defun toggle-fullscreen-darwin ()
+(defun toggle-fullscreen-osx ()
   "Toggle full screen darwin style"
   (interactive)
   (set-frame-parameter
