@@ -17,49 +17,51 @@
                (kodx/get-config-dir VPath))
 )
 
-;; set init file for custom settings
-(setq custom-file "~/.emacs.d/custom.el")
 
 ;; set user name and email, look private.el.example for example
-(when (file-exists-p "~/.emacs.d/private.el")
-    (load-file "~/.emacs.d/private.el"))
+(when (file-exists-p (kodx/get-config-dir "private.el"))
+    (load-file (kodx/get-config-dir "private.el")))
 
 ;; add commonly used paths
 (push "~/work/dev" load-path)
 
 
 ;; load concrete packages
-(load "~/.emacs.d/rc/emacs-rc-general.el")
-(load "~/.emacs.d/rc/emacs-rc-common-hooks.el")
-(load "~/.emacs.d/rc/emacs-rc-kbd.el")
-(load "~/.emacs.d/rc/emacs-rc-info.el")
-(load "~/.emacs.d/rc/emacs-rc-yasnippet.el")
-(load "~/.emacs.d/rc/emacs-rc-theme.el")
-(load "~/.emacs.d/rc/emacs-rc-font.el")
-(load "~/.emacs.d/rc/emacs-rc-backup.el")
-(load "~/.emacs.d/rc/emacs-rc-ido-mode.el")
-(load "~/.emacs.d/rc/emacs-rc-jump-char.el")
-(load "~/.emacs.d/rc/emacs-rc-syntax-subword.el")
-(load "~/.emacs.d/rc/emacs-rc-multiple-cursors.el")
+(load (kodx/get-config-dir "rc/emacs-rc-general.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-common-hooks.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-kbd.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-info.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-yasnippet.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-theme.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-font.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-backup.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-ido-mode.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-jump-char.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-syntax-subword.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-multiple-cursors.el"))
 
 ;; load plugins
-(load "~/.emacs.d/rc/emacs-rc-whitespace.el")
+(load (kodx/get-config-dir "rc/emacs-rc-whitespace.el"))
 
 ;; automation
-(load "~/.emacs.d/rc/emacs-rc-auto-insert.el")
-(load "~/.emacs.d/rc/emacs-rc-auto-complete.el")
+(load (kodx/get-config-dir "rc/emacs-rc-auto-insert.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-auto-complete.el"))
 
 ;; programming tools & languages
-(load "~/.emacs.d/rc/emacs-rc-ccmode.el")
-(load "~/.emacs.d/rc/emacs-rc-python.el")
-(load "~/.emacs.d/rc/emacs-rc-html.el")
-(load "~/.emacs.d/rc/emacs-rc-lua-mode.el")
+(load (kodx/get-config-dir "rc/emacs-rc-ccmode.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-python.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-html.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-lua-mode.el"))
 
 ;; Google's Go
-(load "~/.emacs.d/rc/emacs-rc-go-mode.el")
+(load (kodx/get-config-dir "rc/emacs-rc-go-mode.el"))
 
 ;; recent files
-(load "~/.emacs.d/rc/emacs-rc-recentf.el")
+(load (kodx/get-config-dir "rc/emacs-rc-recentf.el"))
+
+;; file for custom settings
+(when (file-exists-p (kodx/get-config-dir "custom.el"))
+    (load-file (kodx/get-config-dir "custom.el")))
 
 ;; toggle fullscreen
 (cond (window-system
