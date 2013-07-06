@@ -64,7 +64,7 @@
     (load-file (kodx/get-config-dir "custom.el")))
 
 ;; toggle fullscreen
-(cond (window-system
+(cond (nix
     (toggle-fullscreen)
 ))
 

@@ -10,6 +10,10 @@
   (eq system-type 'gnu/linux)
   "Are we running on *nix system?")
 
+(defconst osx
+  (eq system-type 'darwin)
+  "Are we on osx?")
+
 (defconst graf
   (not (eq window-system 'nil))
   "Are we running window system?")
