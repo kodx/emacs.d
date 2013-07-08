@@ -1,4 +1,4 @@
-# Emacs config by Yegor Bayev <baev.egor (at) gmail.com>
+# Emacs config by Yegor Bayev (kodx)
 
 most of parts derived from Alex Ott config
 http://alexott.net/en/emacs/
@@ -31,7 +31,7 @@ other defined keys can be found in
 
 user settings:
 > **custom.el**
-(my favourite is Meslo-Font from https://github.com/andreberg/Meslo-Font)
+my favourite is Meslo-Font from https://github.com/andreberg/Meslo-Font
 
 for python-mode install pymacs
 
