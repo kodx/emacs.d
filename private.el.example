@@ -1,12 +1,7 @@
-;; user settings example file
 
-;;;; set full user name and email for auto insert
+
 (setq
-  user-full-name "John Doe"
-  user-mail-address "john@mail.com"
+  user-full-name "Yegor Bayev"
+  user-mail-address "baev.egor@gmail.com"
 )
 
-;; set preferred font
-(cond (window-system
-      (set-default-font "Monaco 14")
-))

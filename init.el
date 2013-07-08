@@ -18,13 +18,17 @@
 )
 
 
+;; set user name and email, look private.el.example for example
+(when (file-exists-p (kodx/get-config-dir "private.el"))
+    (load-file (kodx/get-config-dir "private.el")))
+
 ;; add commonly used paths
 (push "~/work/dev" load-path)
 
 
 ;; load concrete packages
-(load (kodx/get-config-dir "rc/emacs-rc-common-hooks.el"))
 (load (kodx/get-config-dir "rc/emacs-rc-general.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-common-hooks.el"))
 (load (kodx/get-config-dir "rc/emacs-rc-kbd.el"))
 (load (kodx/get-config-dir "rc/emacs-rc-info.el"))
 (load (kodx/get-config-dir "rc/emacs-rc-yasnippet.el"))
@@ -55,16 +59,15 @@
 ;; recent files
 (load (kodx/get-config-dir "rc/emacs-rc-recentf.el"))
 
-;; set user settings, like email, name, font
-;; look for private.el.example for example
-(when (file-exists-p (kodx/get-config-dir "private.el"))
-    (load-file (kodx/get-config-dir "private.el")))
+;; file for custom settings
+(when (file-exists-p (kodx/get-config-dir "custom.el"))
+    (load-file (kodx/get-config-dir "custom.el")))
 
 ;; toggle fullscreen
-(cond (window-system
-       (cond (lin
-              (toggle-fullscreen-lin)))
-       (cond (osx
-              (toggle-fullscreen-osx)))
+(cond (nix
+    (toggle-fullscreen)
+))
+(cond (osx
+       (toggle-fullscreen-darwin)
 ))
 ;; init.el
