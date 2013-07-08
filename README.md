@@ -1,4 +1,4 @@
-= Emacs config by Yegor Bayev <baev.egor (at) gmail.com>
+# Emacs config by Yegor Bayev <baev.egor (at) gmail.com>
 
 most of parts derived from Alex Ott config
 http://alexott.net/en/emacs/
@@ -6,7 +6,7 @@ http://alexott.net/en/emacs/
 Nice visual cheat sheet for standart keybindnings
 http://stevenchan.us/emacs-visual-cheat-sheet
 
-- REQUIREMENTS: Emacs 24 
+## REQUIREMENT: Emacs 24 (or above) 
 
 my keys memo:
 * F2 - save current buffer
@@ -26,13 +26,13 @@ my keys memo:
 * Control+x Control+r - open recent opened files list
 * Alt+m - go to next symbol occurence
 
-other defined keys can be found in 
-*rc/emacs-rc-kbd.el*
+other defined keys can be found in
+> **rc/emacs-rc-kbd.el**
 
 user settings:
-*custom.el*
+> **custom.el**
 (my favourite is Meslo-Font from https://github.com/andreberg/Meslo-Font)
 
 for python-mode install pymacs
 
-Please read _INSTALL_ to make installation setup
+Please read **INSTALL** to make installation setup
