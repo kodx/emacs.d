@@ -1,6 +1,6 @@
 ;; Emacs 24 config file
 ;; author: Yegor Bayev <baev.egor@gmail.com>
-;; most configs taken from Alex Ott config http://alexott.net/en/emacs/
+;; most settings derived from Alex Ott config http://alexott.net/en/emacs/
 
 ;; debug on
 ;; (setq debug-on-error t)
@@ -16,15 +16,6 @@
   (add-to-list 'load-path
                (kodx/get-config-dir VPath))
 )
-
-
-;; set user name and email, look private.el.example for example
-(when (file-exists-p (kodx/get-config-dir "private.el"))
-    (load-file (kodx/get-config-dir "private.el")))
-
-;; add commonly used paths
-(push "~/work/dev" load-path)
-
 
 ;; load concrete packages
 (load (kodx/get-config-dir "rc/emacs-rc-general.el"))
@@ -59,7 +50,8 @@
 ;; recent files
 (load (kodx/get-config-dir "rc/emacs-rc-recentf.el"))
 
-;; file for custom settings
+;; file for custom settings (username, email, font, etc)
+;; look for custom-settings.el.example
 (when (file-exists-p (kodx/get-config-dir "custom.el"))
     (load-file (kodx/get-config-dir "custom.el")))
 

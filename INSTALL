@@ -1,17 +1,14 @@
 Installation Instructions
 *************************
 
-This config meant to be under 
-~/.emacs.d 
-on posix-like OS.
-
 Please make byte-compile:
 C-u 0 M-x byte-recompile-directory 
 ~/.emacs.d
+(or where your config dir is)
 this is going to speed up emacs startup time.
 
 You can also use daemon mode:
 http://www.emacswiki.org/emacs/EmacsAsDaemon
 
 To setup your name and email(used in autogeneration) copy
-private.el.example to private.el and edit it.
+custom.el.example to custom.el and edit it.

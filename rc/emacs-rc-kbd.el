@@ -31,6 +31,7 @@
 (global-set-key [f10] (lambda ()
                          "Save all buffers and exit without query"
                          (interactive)
+                         (recentf-save-list)
                          (save-some-buffers t)
                          (save-buffers-kill-emacs)))
 (global-set-key [f12] 'kill-emacs)
