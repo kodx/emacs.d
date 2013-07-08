@@ -31,7 +31,8 @@ other defined keys can be found in
 
 user settings:
 > **custom.el**
-my favourite is Meslo-Font from https://github.com/andreberg/Meslo-Font
+
+I prefer Meslo-Font from https://github.com/andreberg/Meslo-Font
 
 for python-mode install pymacs
 
