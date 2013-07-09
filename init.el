@@ -43,6 +43,7 @@
 (load (kodx/get-config-dir "rc/emacs-rc-python.el"))
 (load (kodx/get-config-dir "rc/emacs-rc-html.el"))
 (load (kodx/get-config-dir "rc/emacs-rc-lua-mode.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-geiser.el"))
 
 ;; Google's Go
 (load (kodx/get-config-dir "rc/emacs-rc-go-mode.el"))
@@ -56,10 +57,12 @@
     (load-file (kodx/get-config-dir "custom.el")))
 
 ;; toggle fullscreen
-(cond (nix
-    (toggle-fullscreen)
-))
-(cond (osx
-       (toggle-fullscreen-darwin)
+(cond (window-system
+       (cond (lin
+              (toggle-fullscreen-lin)
+       ))
+       (cond (osx
+              (toggle-fullscreen-darwin)
+        ))
 ))
 ;; init.el

@@ -31,10 +31,12 @@
 (global-set-key [f10] (lambda ()
                          "Save all buffers and exit without query"
                          (interactive)
-                         (recentf-save-list)
                          (save-some-buffers t)
                          (save-buffers-kill-emacs)))
-(global-set-key [f12] 'kill-emacs)
+(global-set-key [f12] (lambda ()
+                        "Save recentf buffer and exit"
+                        (interactive)
+                        (kill-emacs)))
 ;; (global-set-key "\M-0" 'buffer-menu)
 ;; (global-set-key [(control menu)] 'popup-mode-menu)
 (global-set-key [(shift insert)] 'clipboard-yank)
