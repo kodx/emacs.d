@@ -5,7 +5,7 @@ http://alexott.net/en/emacs/
 
 Nice visual cheat sheet for standart keybindnings
 http://stevenchan.us/emacs-visual-cheat-sheet
-
+ 
 ## REQUIREMENT: Emacs 24 (or above) 
 
 my keys memo:
