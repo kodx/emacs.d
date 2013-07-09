@@ -33,7 +33,7 @@ user settings:
 > **custom.el**
 
 I prefer Meslo-Font from https://github.com/andreberg/Meslo-Font
-
+ 
 for python-mode install pymacs
 
 Please read **INSTALL** to make installation setup
