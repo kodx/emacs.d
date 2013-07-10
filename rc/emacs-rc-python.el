@@ -18,7 +18,8 @@
 
 (add-to-list 'load-path (concat user-emacs-directory
             (convert-standard-filename "plugins/python-mode/extensions")))
-(require 'py-smart-operator)
+;; py-smart-operator borken in emacs 24, disable it
+;; (require 'py-smart-operator)
 
 (defun kodx/python-mode-hook ()
   (py-smart-operator-mode)
