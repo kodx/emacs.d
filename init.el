@@ -63,7 +63,7 @@
               (toggle-fullscreen-lin)
        ))
        (cond (osx
-              (toggle-fullscreen-darwin)
+              (toggle-fullscreen-osx)
         ))
 ))
 ;; init.el
