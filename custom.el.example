@@ -1,0 +1,21 @@
+;;; custom.el ---
+
+;; set user name and email
+(setq
+  user-full-name "John Doe"
+  user-mail-address "john (at) mail.com"
+)
+
+;; set font
+(cond (window-system
+        (set-default-font "Monospace 12"))
+)
+
+;; add commonly used paths
+(push "~/work/dev" load-path)
+
+;; set geiser compiler to racket, you can choose guile
+(setq geiser-active-implementations '(racket))
+
+
+;;; custom.el ends here
