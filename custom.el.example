@@ -17,5 +17,18 @@
 ;; set geiser compiler to racket, you can choose guile
 (setq geiser-active-implementations '(racket))
 
+(defun my-whitespace-mode-hook ()
+  ;; set highlight foreground and background color
+  ;; (set-face-foreground 'whitespace-line "red")
+  ;; (set-face-background 'whitespace-line nil)
+  (setq whitespace-style '(face lines-tail))
+  (setq whitespace-line-column 80)
+  (whitespace-mode)
+)
+
+;; enable white-space mode for emacs-lisp-mode
+(add-hook 'emacs-lisp-mode-hook 'my-whitespace-mode-hook)
+;; and for ruby
+(add-hook 'ruby-mode-hook 'my-whitespace-mode-hook)
 
 ;;; custom.el ends here

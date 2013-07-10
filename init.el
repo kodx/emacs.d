@@ -48,13 +48,14 @@
 ;; Google's Go
 (load (kodx/get-config-dir "rc/emacs-rc-go-mode.el"))
 
-;; recent files
-(load (kodx/get-config-dir "rc/emacs-rc-recentf.el"))
 
 ;; file for custom settings (username, email, font, etc)
 ;; look for custom-settings.el.example
 (when (file-exists-p (kodx/get-config-dir "custom.el"))
     (load-file (kodx/get-config-dir "custom.el")))
+
+;; recent files
+(load (kodx/get-config-dir "rc/emacs-rc-recentf.el"))
 
 ;; toggle fullscreen
 (cond (window-system
