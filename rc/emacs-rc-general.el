@@ -42,6 +42,7 @@
     ediff-window-setup-function 'ediff-setup-windows-plain
     ring-bell-function 'ignore
     bidi-display-reordering nil
+    major-mode 'text-mode               ; set default major-mode to text-mode
 )
 
 ;;decor

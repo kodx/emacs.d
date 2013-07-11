@@ -1,3 +1,4 @@
+;; -*- mode: emacs-lisp; -*-
 ;;; custom.el ---
 
 ;; set user name and email
@@ -30,5 +31,18 @@
 (add-hook 'emacs-lisp-mode-hook 'my-whitespace-mode-hook)
 ;; and for ruby
 (add-hook 'ruby-mode-hook 'my-whitespace-mode-hook)
+
+
+;; set visible ruler to control line lenght
+(defun my-fci-mode-hook ()
+  ;; set ruler position
+  (setq fci-rule-column 80)
+  (fci-mode)
+)
+
+;; enable ruler for emacs-lisp-mode
+(add-hook 'emacs-lisp-mode-hook 'my-fci-mode-hook)
+;; and for ruby
+(add-hook 'ruby-mode-hook 'my-fci-mode-hook)
 
 ;;; custom.el ends here

@@ -43,6 +43,7 @@
 
 ;; load plugins
 (load (kodx/get-config-dir "rc/emacs-rc-whitespace.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-fill-column-indicator.el"))
 
 ;; automation
 (load (kodx/get-config-dir "rc/emacs-rc-auto-insert.el"))

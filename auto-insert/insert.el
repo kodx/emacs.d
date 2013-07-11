@@ -1,3 +1,4 @@
+;; -*- mode: emacs-lisp; -*-
 ;;; (>>FILE<<) ---
 
 ;; Author: (>>AUTHOR<<)
