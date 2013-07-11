@@ -22,7 +22,7 @@
 ;; (require 'py-smart-operator)
 
 (defun kodx/python-mode-hook ()
-  (py-smart-operator-mode)
+  ;; (py-smart-operator-mode)
   (setq py-set-fill-column-p t)
 )
 (add-hook 'python-mode-hook 'kodx/python-mode-hook)

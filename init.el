@@ -5,17 +5,27 @@
 ;; debug on
 ;; (setq debug-on-error t)
 
+;; common functions
+
+;; get-config dir platform independent
 (defun kodx/get-config-dir (VPath)
   "get default config dir for plugins"
   (concat user-emacs-directory
           (convert-standard-filename VPath))
 )
 
+;; add-load-path platform independent
 (defun kodx/add-load-path (VPath)
   "add to load path"
   (add-to-list 'load-path
                (kodx/get-config-dir VPath))
 )
+
+;; make dir if not exists
+(defun kodx/mkdir-if-not-exists (VPath)
+  (if (file-exists-p VPath) () (make-directory-internal VPath))
+)
+
 
 ;; load concrete packages
 (load (kodx/get-config-dir "rc/emacs-rc-general.el"))
