@@ -55,6 +55,7 @@
 (load (kodx/get-config-dir "rc/emacs-rc-html.el"))
 (load (kodx/get-config-dir "rc/emacs-rc-lua-mode.el"))
 (load (kodx/get-config-dir "rc/emacs-rc-geiser.el"))
+(load (kodx/get-config-dir "rc/emacs-rc-erlang-mode.el"))
 
 ;; Google's Go
 (load (kodx/get-config-dir "rc/emacs-rc-go-mode.el"))
