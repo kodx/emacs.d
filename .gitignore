@@ -3,5 +3,6 @@ recentf
 image-dired/
 auto-save-list/
 ac-comphist.dat
+abbrev_defs
 *.elc
 
