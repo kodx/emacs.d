@@ -9,7 +9,5 @@
 
 (setq auto-mode-alist (cons '("\\.erl$" . erlang-mode) auto-mode-alist))
 (setq auto-mode-alist (cons '("\\.hrl$" . erlang-mode) auto-mode-alist))
-; (add-hook 'erlang-mode-hook '(lambda ()
-;     (local-set-key (kbd "RET") 'newline-and-indent)))
 
 ;;; emacs-rc-erlang-mode.el ends here
