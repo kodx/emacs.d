@@ -1,6 +1,6 @@
 ;;; emacs-rc-kbd.el ---
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 
 ;; (global-set-key [button5]  'scroll-up)
 ;; (global-set-key [button4]  'scroll-down)
@@ -76,7 +76,33 @@
 (global-set-key [(mouse-3)] 'mouse-major-mode-menu)
 ;; (global-set-key [(shift mouse-3)] 'mouse-buffer-menu)
 
+;; replacement for C-k to join intented line to previous
+;; (defun kill-and-join-forward (&optional arg)
+;;   (interactive "P")
+;;   (if (and (eolp) (not (bolp)))
+;;     (progn (forward-char 1)
+;;            (just-one-space 0)
+;;            (backward-char 1)
+;;            (kill-line arg))
+;;     (kill-line arg)))
+;; (global-set-key "\C-k" 'kill-and-join-forward)
+
 ;; find file at point keybindings, replace for C-x C-f
 (ffap-bindings)
+
+;; useful funcs and hooks
+
+;; replace return with newline-and-indent on certain modes
+(setq kodx/prog-modes '(c++-mode c-mode haskell-mode emacs-lisp-mode
+                        lisp-mode scheme-mode erlang-mode python-mode 
+                        shell-script-mode go-mode))
+
+(defun kodx/prog-modes-hook ()
+  (when (member major-mode kodx/prog-modes)
+    (local-set-key (kbd "RET") 'newline-and-indent)))
+(add-hook 'after-change-major-mode-hook 'kodx/prog-modes-hook)
+
+
+
 
 ;;; emacs-rc-kbd.el ends here

@@ -1,6 +1,6 @@
 ;;; emacs-rc-multiple-cursors.el ---
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 ;; Created: Wed Jul  3 22:28:49 2013
 
 (kodx/add-load-path "plugins/multiple-cursors")

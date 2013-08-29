@@ -1,6 +1,6 @@
 ;;; emacs-rc-jump-char.el ---
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 ;; Created: Wed Apr 10 23:46:24 2013
 
 (kodx/add-load-path "plugins/jump-char")

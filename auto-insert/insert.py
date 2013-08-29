@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
-# File: (>>FILE<<) 
+# File: (>>FILE<<)
 # Author: (>>AUTHOR<<)
 # Created: (>>DATE<<)
-# License: 
+# License:
 
 
 
 # (>>FILE<<) ends here
-

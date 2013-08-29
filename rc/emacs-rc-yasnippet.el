@@ -1,6 +1,6 @@
 ;;; emacs-rc-yasnippet.el ---
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 
 
 (kodx/add-load-path "plugins/yasnippet")

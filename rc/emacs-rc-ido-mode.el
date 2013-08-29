@@ -1,6 +1,6 @@
 ;;; emacs-rc-ido-mode.el ---
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 ;; Created: Fri Dec  7 10:44:35 2012
 
 (require 'ido)

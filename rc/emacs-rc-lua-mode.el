@@ -1,6 +1,6 @@
 ;;; emacs-rc-lua-mode.el ---
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 ;; Created: Tue Jul 12 12:16:43 2011
 
 (kodx/add-load-path "plugins/lua-mode")

@@ -1,6 +1,6 @@
 ;;; emacs-rc-font.el ---
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 
 (cond (window-system
     (condition-case nil

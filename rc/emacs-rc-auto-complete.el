@@ -1,6 +1,6 @@
 ;;; emacs-rc-autocomplete.el ---
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 ;; Created: Sat May 28 20:23:07 2011
 
 (kodx/add-load-path "plugins/auto-complete")

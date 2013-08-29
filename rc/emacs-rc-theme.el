@@ -1,5 +1,5 @@
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 
 (add-to-list 'custom-theme-load-path (kodx/get-config-dir "themes"))
 

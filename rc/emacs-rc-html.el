@@ -1,6 +1,6 @@
 ;;; emacs-rc-html.el ---
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 ;; Created: Thu May 19 23:33:22 2011
 
 (defvar hexcolour-keywords

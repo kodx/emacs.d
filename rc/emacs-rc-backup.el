@@ -1,6 +1,6 @@
 ;;; emacs-rc-backup.el ---
 ;;
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 
 ;; disable autosave files like #filename#
 (setq auto-save-default nil)

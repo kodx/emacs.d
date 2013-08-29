@@ -1,6 +1,6 @@
 ;;; emacs-rc-python.el ---
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 ;; based on config Alex Ott <alexott@gmail.com>
 
 ;; Python-mode by Andreas Roehler

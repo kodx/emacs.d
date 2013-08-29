@@ -1,6 +1,6 @@
 ;;; emacs-rc-recentf.el ---
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 ;; Created: Wed Apr 10 21:28:18 2013
 
 ;; open recent files

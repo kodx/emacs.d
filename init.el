@@ -1,5 +1,5 @@
 ;; Emacs 24 config file
-;; author: Yegor Bayev <baev.egor@gmail.com>
+;; author: Yegor Bayev <baev.egor (at) gmail.com>
 ;; most settings derived from Alex Ott config http://alexott.net/en/emacs/
 
 ;; debug on

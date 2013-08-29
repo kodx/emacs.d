@@ -45,9 +45,8 @@
 ;; and for ruby
 (add-hook 'ruby-mode-hook 'my-fci-mode-hook)
 
-
-;; erlang-mode settings
-(setq erlang-root-dir "/usr/local/otp")
-(setq exec-path (cons "/usr/local/otp/bin" exec-path))
+;; erlang-mode settings (for Ubuntu)
+(setq erlang-root-dir "/usr/lib/erlang")
+(setq exec-path (cons "/usr/lib/erlang/bin" exec-path))
 
 ;;; custom.el ends here

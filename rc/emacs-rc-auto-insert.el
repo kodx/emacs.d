@@ -5,7 +5,7 @@
 ;; Keywords:
 ;; Requirements:
 ;; Status: not intended to be distributed yet
-;; Modified by: Yegor Bayev <baev.egor@gmail.com>
+;; Modified by: Yegor Bayev <baev.egor (at) gmail.com>
 
 ;; auto-insert stuff
 (add-hook 'find-file-hooks 'auto-insert)

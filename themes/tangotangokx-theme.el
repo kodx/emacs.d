@@ -1,23 +1,21 @@
-;;; tangotango-theme.el --- Tango Palette color theme for Emacs 24.
+;;; tangotangokx-theme.el --- Tango Palette color theme for Emacs 24.
 
 ;; First derived from color-theme-tango.el,  created by danranx@gmail.com :
 ;; http://www.emacswiki.org/emacs/color-theme-tango.el
 
-;; Copyright (C) 2011, 2012 Julien Barnier <julien@nozav.org>
+;; Copyright (C) 2011, 2012, 2013 Julien Barnier <julien@nozav.org>
 
 ;; Author: Julien Barnier
 ;; Adapted-By: Yesudeep Mangalapilly
 ;; Keywords: tango palette color theme emacs
 ;; URL: https://github.com/juba/color-theme-tangotango
-;; Version: 0.0.4
+;; Version: 0.0.5
 
-;; kodx version 0.0.1
-;; modified by Yegor Bayev <baev.egor@gmail.com>
+;; kodx version 0.0.2
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
+;; URL: https://github.com/kodx/emacs.d
 
 ;; This file is NOT part of GNU Emacs.
-
-;; For screenshots and installation instructions :
-;; http://blog.nozav.org/post/2010/07/12/Updated-tangotango-emacs-color-theme
 
 ;;; License:
 
@@ -48,9 +46,7 @@
  ;; - yellow :     "#fcaf3d"
  ;; - green :      "#6ac214"
  ;; - orange/red : "#ff6347"
-;; `(default ((t (:family "DejaVu Sans Mono" :foundry "unknown" :width normal :height 90 :weight normal :slant normal :underline nil :overline nil :strike-through nil :box nil :inverse-video nil :foreground "#eeeeec" :background "#2e3434" :stipple nil :inherit nil))))
- `(default ((t (:foreground "#d3d7cf" :background "#2e3434" :stipple nil :inherit nil))))
- ;; `(cursor ((t (:foreground "#222222" :background "#fce94f"))))
+ `(default ((t (:slant normal :underline nil :overline nil :strike-through nil :box nil :inverse-video nil :foreground "#d3d7cf" :background "#2e3434" :stipple nil :inherit nil))))
  `(cursor ((t (:foreground "#222222" :background "#ffaf00"))))
  `(fixed-pitch ((t (:inherit (default)))))
  `(variable-pitch ((t (:family "Sans Serif"))))
@@ -66,24 +62,21 @@
  `(font-lock-comment-face ((t (:foreground "#888a85"))))
  `(font-lock-constant-face ((t (:foreground "#8ae234"))))
  `(font-lock-doc-face ((t (:foreground "#888a85"))))
-;; `(font-lock-function-name-face ((t (:weight bold :foreground "#edd400"))))
  `(font-lock-function-name-face ((t (:weight bold :foreground "#fcaf3d"))))
  `(font-lock-keyword-face ((t (:weight bold :foreground "#729fcf"))))
  `(font-lock-negation-char-face ((t nil)))
  `(font-lock-preprocessor-face ((t (:inherit (font-lock-builtin-face)))))
  `(font-lock-regexp-grouping-backslash ((t (:inherit (bold)))))
  `(font-lock-regexp-grouping-construct ((t (:inherit (bold)))))
-;; `(font-lock-string-face ((t (:slant italic :foreground "#ad7fa8"))))
- `(font-lock-string-face ((t (:foreground "#ad7fa8"))))
+ `(font-lock-string-face ((t ( :foreground "#ad7fa8"))))
  `(font-lock-type-face ((t (:weight bold :foreground "#8ae234"))))
-;; `(font-lock-variable-name-face ((t (:foreground "#ff6347"))))
  `(font-lock-variable-name-face ((t (:foreground "#ff6347"))))
  `(font-lock-warning-face ((t (:weight bold :foreground "#f57900"))))
  `(button ((t (:inherit (link)))))
  `(link ((t (:foreground "#1e90ff" :underline (:color foreground-color :style line)))))
  `(link-visited ((default (:inherit (link))) (((class color) (background light)) (:foreground "#8b008b")) (((class color) (background dark)) (:foreground "#ee82ee"))))
  `(fringe ((t (:background "#1a1a1a"))))
- `(header-line ((default (:inherit (mode-line))) (((type tty)) (:underline (:color foreground-color :style line) :inverse-video nil)) (((class color grayscale) (background light)) (:box nil :foreground "#333333" :background "#e5e5e5")) (((class color grayscale) (background dark)) (:box nil :foreground "#e5e5e5" :background "#333333")) (((class mono) (background light)) (:underline (:color foreground-color :style line) :box nil :inverse-video nil :foreground "#000000" :background "#ff0000")) (((class mono) (background dark)) (:underline (:color foreground-color :style line) :box nil :inverse-video nil :foreground "#ff0000" :background "#000000"))))
+ `(header-line ((default (:inherit (mode-line))) (((type tty)) (:underline (:color foreground-color :style line) :inverse-video nil)) (((class color grayscale) (background light)) (:box nil :foreground "#333333" :background "#e5e5e5")) (((class color grayscale) (background dark)) (:box nil :foreground "#e5e5e5" :background "#333333")) (((class mono) (background light)) (:underline (:color foreground-color :style line) :box nil :inverse-video nil :foreground "#000000" :background "#ffffff")) (((class mono) (background dark)) (:underline (:color foreground-color :style line) :box nil :inverse-video nil :foreground "#ffffff" :background "#000000"))))
  `(tooltip ((t (:background "#ffffe0" :foreground "#000000" :inherit (quote variable-pitch)))))
  `(mode-line ((t (:box (:line-width 1 :color nil :style released-button) :background "#222222" :foreground "#bbbbbc"))))
  `(mode-line-buffer-id ((t (:weight bold :foreground "#ffa500"))))
@@ -105,9 +98,9 @@
  `(eshell-ls-executable-face ((t (:bold t :foreground "#ff7f50"))))
  `(eshell-ls-missing-face ((t (:bold t :foreground "#000000"))))
  `(eshell-ls-special-face ((t (:bold t :foreground "#ffd700"))))
- `(eshell-ls-symlink-face ((t (:bold t :foreground "#ff0000"))))
+ `(eshell-ls-symlink-face ((t (:bold t :foreground "#ffffff"))))
  `(widget-button ((t (:bold t))))
- `(widget-mouse-face ((t (:bold t :foreground "#ff0000" :background "#8b2323"))))
+ `(widget-mouse-face ((t (:bold t :foreground "#ffffff" :background "#8b2323"))))
  `(widget-field ((t (:foreground "#ffa500" :background "#4d4d4d"))))
  `(widget-single-line-field ((t (:foreground "#ffa500" :background "#4d4d4d"))))
  `(custom-group-tag ((t (:bold t :foreground "#fcaf3d" :height 1.3))))
@@ -153,23 +146,23 @@
  `(gnus-summary-high-ancient((t (:bold t :foreground "#4169e1"))))
  `(gnus-summary-high-read((t (:bold t :foreground "#32cd32"))))
  `(gnus-summary-high-ticked((t (:bold t :foreground "#ff6347"))))
- `(gnus-summary-high-unread((t (:bold t :foreground "#ff0000"))))
+ `(gnus-summary-high-unread((t (:bold t :foreground "#ffffff"))))
  `(gnus-summary-low-ancient((t (:italic t :foreground "#32cd32"))))
  `(gnus-summary-low-read((t (:italic t :foreground "#4169e1"))))
  `(gnus-summary-low-ticked((t (:italic t :foreground "#8b0000"))))
- `(gnus-summary-low-unread((t (:italic t :foreground "#ff0000"))))
+ `(gnus-summary-low-unread((t (:italic t :foreground "#ffffff"))))
  `(gnus-summary-normal-ancient((t (:foreground "#4169e1"))))
  `(gnus-summary-normal-read((t (:foreground "#32cd32"))))
  `(gnus-summary-normal-ticked((t (:foreground "#cd5c5c"))))
- `(gnus-summary-normal-unread((t (:foreground "#ff0000"))))
- `(gnus-summary-selected ((t (:background "#8b2323" :foreground "#ff0000"))))
+ `(gnus-summary-normal-unread((t (:foreground "#ffffff"))))
+ `(gnus-summary-selected ((t (:background "#8b2323" :foreground "#ffffff"))))
  `(message-header-name((t (:foreground "#ff6347"))))
  `(message-header-newsgroups((t (:italic t :bold t :foreground "#009acd"))))
  `(message-header-other((t (:foreground "#009acd"))))
  `(message-header-xheader((t (:foreground "#1874cd"))))
- `(message-header-subject ((t (:foreground "#ff0000"))))
- `(message-header-to ((t (:foreground "#ff0000"))))
- `(message-header-cc ((t (:foreground "#ff0000"))))
+ `(message-header-subject ((t (:foreground "#ffffff"))))
+ `(message-header-to ((t (:foreground "#ffffff"))))
+ `(message-header-cc ((t (:foreground "#ffffff"))))
  `(org-hide ((t (:foreground "#2e3436"))))
  `(org-level-1 ((t (:bold t :foreground "#1e90ff" :height 1.5))))
  `(org-level-2 ((t (:bold t :foreground "#fcaf3d" :height 1.2))))
@@ -179,22 +172,23 @@
  `(org-footnote  ((t (:underline t :foreground "#cd00cd"))))
  `(org-link ((t (:foreground "#7ec0ee" :background "#2e3436" :underline nil))))
  `(org-special-keyword ((t (:foreground "#a52a2a"))))
- `(org-verbatim ((t (:foreground "#eeeeec" :underline t :slant italic))))
+ `(org-verbatim ((t (:foreground "#d3d7cf" :underline t ))))
  `(org-block ((t (:foreground "#bbbbbc"))))
- `(org-quote ((t (:inherit org-block :slant italic))))
- `(org-verse ((t (:inherit org-block :slant italic))))
+ `(org-quote ((t (:inherit org-block ))))
+ `(org-verse ((t (:inherit org-block ))))
  `(org-todo ((t (:bold t :foreground "#ff0000"))))
  `(org-done ((t (:bold t :foreground "#228b22"))))
  `(org-agenda-structure ((t (:weight bold :foreground "#ff6347"))))
  `(org-agenda-date ((t (:foreground "#6ac214"))))
  `(org-agenda-date-weekend ((t (:weight normal :foreground "#1e90ff"))))
  `(org-agenda-date-today ((t (:weight bold :foreground "#fcaf3d"))))
+ `(org-scheduled-previously ((t (:weight normal :foreground "#fcaf3d"))))
  `(org-block-begin-line ((t ( :foreground "#888a85" :background "#252b2b"))))
  `(org-block-background ((t (:background "#252b2b"))))
  `(org-block-end-line ((t ( :foreground "#888a85" :background "#252b2b"))))
  `(anything-header ((t (:bold t :background "#262626" :foreground "#fcaf3d"))))
  `(anything-candidate-number ((t (:background "#f57900" :foreground "#000000"))))
- `(ess-jb-comment-face ((t (:background "#2e3436" :foreground "#888a85" :slant italic))))
+ `(ess-jb-comment-face ((t (:background "#2e3436" :foreground "#888a85" ))))
  `(ess-jb-hide-face ((t (:background "#2e3436" :foreground "#243436"))))
  `(ess-jb-h1-face ((t (:height 1.6 :foreground "#1e90ff" :slant normal))))
  `(ess-jb-h2-face ((t (:height 1.4 :foreground "#6ac214" :slant normal))))
@@ -206,7 +200,7 @@
  `(magit-item-highlight ((t (:weight extra-bold :inverse-video t))))
  `(diff-header ((t (:background "#4d4d4d"))))
  `(diff-index ((t (:foreground "#fcaf3d" :bold t))))
- `(diff-file-header ((t (:foreground "#eeeeec" :bold t))))
+ `(diff-file-header ((t (:foreground "#d3d7cf" :bold t))))
  `(diff-hunk-header ((t (:foreground "#fcaf3d"))))
  `(diff-added ((t (:foreground "#8ae234"))))
  `(diff-removed ((t (:foreground "#f57900"))))
@@ -245,6 +239,15 @@
  )
 
 
+;; Autoload for MELPA
+
+;;;###autoload
+(and load-file-name
+     (boundp 'custom-theme-load-path)
+     (add-to-list 'custom-theme-load-path
+                  (file-name-as-directory
+                   (file-name-directory load-file-name))))
+
 (provide-theme 'tangotangokx)
 
-;;; tangotango-theme.el ends here
+;;; tangotangokx-theme.el ends here

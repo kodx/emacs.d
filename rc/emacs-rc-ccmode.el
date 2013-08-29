@@ -1,6 +1,6 @@
 ;;; emacs-rc-ccmode.el ---
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 
 (require 'cc-mode)
 

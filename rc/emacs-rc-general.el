@@ -1,6 +1,6 @@
 ;;; emacs-rc-general.el ---
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 
 (defconst win
   (eq system-type 'windows-nt)
@@ -31,8 +31,6 @@
     auto-compression-mode t         ;; Toggle automatic file compression and uncompression
     vc-follow-symlinks t            ;; follow symlinks and don't ask
     echo-keystrokes 0.01                ;; see what you type
-    require-final-newline t             ;; make sure file ends with NEWLINE
-    mode-require-final-newline t        ;; same as above, set more generally
     safe-local-variable-values '((encoding . utf-8) (prompt-to-byte-compile))
     dabbrev-case-fold-search nil        ;; Case is significant for dabbrev
     split-width-threshold 200           ;; I don't like horizontal splitting
@@ -42,6 +40,8 @@
     ediff-window-setup-function 'ediff-setup-windows-plain
     ring-bell-function 'ignore
     bidi-display-reordering nil
+    require-final-newline t             ;; make sure file ends with NEWLINE
+    mode-require-final-newline t        ;; same as above, set more generally
     major-mode 'text-mode               ; set default major-mode to text-mode
 )
 
@@ -150,7 +150,7 @@
 ;; untabify
 (defun untabify-file ()
   (save-excursion
-    (delete-trailing-whitespace)
+    ;; (delete-trailing-whitespace)
     (untabify (point-min) (point-max))))
 
 ;; footnote mode
@@ -166,17 +166,6 @@
 
 ;; usefull functions
 ;;
-
-;; replacement for C-k to join intented line to previous
-(defun kill-and-join-forward (&optional arg)
-  (interactive "P")
-  (if (and (eolp) (not (bolp)))
-    (progn (forward-char 1)
-           (just-one-space 0)
-           (backward-char 1)
-           (kill-line arg))
-    (kill-line arg)))
-(global-set-key "\C-k" 'kill-and-join-forward)
 
 ;;
 (defun uniq ()

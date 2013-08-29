@@ -1,6 +1,6 @@
 ;;; emacs-rc-go-mode.el ---
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 ;; Created: Sun May 15 14:06:38 2011
 
 ;; load and initialize local go-mode

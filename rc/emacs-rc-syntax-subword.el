@@ -1,6 +1,6 @@
 ;;; emacs-rc-syntax-subword.el ---
 
-;; Author: Yegor Bayev <baev.egor@gmail.com>
+;; Author: Yegor Bayev <baev.egor (at) gmail.com>
 ;; Created: Thu Apr 11 15:20:10 2013
 
 (kodx/add-load-path "plugins/syntax-subword")
